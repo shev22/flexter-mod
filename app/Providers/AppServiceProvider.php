@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use App\Actor\Repositories\ActorsRepository;
+use App\Actor\Repositories\Interfaces\ActorsRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+
     /**
      * Register any application services.
      */
