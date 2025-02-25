@@ -17,4 +17,8 @@ check-ide-helper:
 	./vendor/bin/sail composer run ide-helper
 
 lint:
+	@make check-ide-helper
 	@make check-phpstan
+
+migrate:
+	./vendor/bin/sail artisan migrate
