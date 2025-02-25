@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
     app:
@@ -12,6 +12,10 @@ services:
             - .:/var/www/html
         depends_on:
             - db
+        ports:
+            - "${WORKSPACE_VUE_CLI_SERVE_HOST_PORT}:8080"
+            - "${WORKSPACE_VUE_CLI_UI_HOST_PORT}:8000"
+            - "${WORKSPACE_VITE_PORT}:5173"
         networks:
             - laravel
 
@@ -38,7 +42,7 @@ services:
         container_name: nginx_server
         restart: always
         ports:
-            - "8080:80"
+            - "80:80"
         volumes:
             - .:/var/www/html
             - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
