@@ -1,5 +1,5 @@
 install:
-	./vendor/bin/sail build
+	./vendor/bin/sail build --no-cache
 
 start:
 	./vendor/bin/sail up -d
@@ -22,3 +22,10 @@ lint:
 
 migrate:
 	./vendor/bin/sail artisan migrate
+
+terminal:
+	@docker exec -it laravel_app bash
+
+restart:
+	@make stop
+	@make start
