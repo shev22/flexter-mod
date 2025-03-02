@@ -2,19 +2,23 @@
 
 namespace App\Providers;
 
-use App\Actor\Repositories\ActorsRepository;
-use App\Actor\Repositories\Interfaces\ActorsRepositoryInterface;
+use App\Services\MediaService\Interfaces\MediaApiClientInterface;
+use App\Services\MediaService\MediaApiClient;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+
+    public array $bindings = [
+        MediaApiClientInterface::class => MediaApiClient::class,
+    ];
 
     /**
      * Register any application services.
      */
     public function register(): void
     {
-        //
+
     }
 
     /**
