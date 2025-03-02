@@ -7,7 +7,7 @@ export default defineConfig({
         vue({
             template: {
                 transformAssetUrls: {
-                    base:            null,
+                    base: null,
                     includeAbsolute: false,
                 },
             },
@@ -17,9 +17,20 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    resolve: {
+        alias: {
+            ziggy: '/vendor/tightenco/ziggy/dist',
+        },
+    },
     server: {
-        host: '0.0.0.0', // Ensure accessibility inside Docker
+        host: '0.0.0.0',
         port: 5173,
-        watch: { usePolling: true } // Fix issues in Docker
+        hmr: {
+            host: 'localhost',
+        },
+        watch: {
+            usePolling: true
+        },
+        cors: true
     }
 });
