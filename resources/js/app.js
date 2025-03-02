@@ -7,6 +7,7 @@ import Layout from "./Layouts/Layout.vue";
 import { ZiggyVue } from "../../vendor/tightenco/ziggy/dist/";
 import {route} from "ziggy-js";
 import {Ziggy} from "./ziggy.js";
+import {setThemeOnLoad} from "./theme.js";
 
 
 createInertiaApp({
@@ -31,3 +32,4 @@ createInertiaApp({
     }
 }).then((r) => {});
 
+setThemeOnLoad()
