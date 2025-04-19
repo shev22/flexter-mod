@@ -1,8 +1,8 @@
 <template>
-    <Head title=" | Home"/>
-    <h1>Home</h1>
+    <HomeCarousel :movies="movies" />
 </template>
+<script setup lang="ts">
+import HomeCarousel from "../../Components/HomeCarousel.vue";
 
-<script setup>
-import {Head} from "@inertiajs/vue3";
+const { movies } = defineProps<{ movies: any }>();
 </script>

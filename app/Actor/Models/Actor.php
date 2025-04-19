@@ -14,6 +14,6 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Actor extends Model
 {
-    protected $fillable = [ 'actor_id', 'name', 'profile_path', 'known_for', 'popularity','slug' ];
+    protected $fillable = [ 'actor_id', 'name', 'profile_path', 'known_for', 'popularity'];
 
 }

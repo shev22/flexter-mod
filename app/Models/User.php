@@ -2,9 +2,14 @@
 
 namespace App\Models;
 
+use App\WatchList\Models\WatchList;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
+/**
+ * @mixin IdeHelperUser
+ */
 class User extends Authenticatable
 {
     use HasFactory;
@@ -41,4 +46,10 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function watchlist(): HasMany
+    {
+        return $this->hasMany(WatchList::class);
+    }
+
 }

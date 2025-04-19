@@ -1,20 +1,17 @@
 install:
 	./vendor/bin/sail build --no-cache
 
-start:
-	./vendor/bin/sail up -d
-
 stop:
 	./vendor/bin/sail stop
 
 check-phpstan:
-	./vendor/bin/sail composer run phpstan
+	@docker exec -it laravel_app composer run phpstan
 
 check-cs-fixer:
-	./vendor/bin/sail composer run cs-fixer
+	@docker exec -it laravel_app composer run cs-fixer
 
 check-ide-helper:
-	./vendor/bin/sail composer run ide-helper
+	@docker exec -it laravel_app composer run ide-helper
 
 lint:
 	@make check-ide-helper
@@ -26,6 +23,9 @@ migrate:
 terminal:
 	@docker exec -it laravel_app bash
 
+start:
+	./vendor/bin/sail up -d
+	@docker exec -it laravel_app npm run dev
 restart:
 	@make stop
 	@make start

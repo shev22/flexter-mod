@@ -12,10 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('actors', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('actor_id');
+            $table->unsignedBigInteger('id')->primary();
             $table->string('name');
-            $table->string('profile_path');
+            $table->string('profile_path')->nullable();
             $table->string('known_for');
             $table->string('popularity');
             $table->timestamps();

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth')->group(function () {
     Route::get('/admin', SeriesController::class)->name('admin');
     Route::get('/watchlist', WatchListController::class)->name('watchlist');
+
     Route::get('/dashboard', DashBoardController::class)->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
@@ -27,7 +28,12 @@ Route::middleware('guest')->group(function () {
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/actors', ActorsController::class)->name('actors');
+
+
 Route::get('/movies', MovieController::class)->name('movies');
+Route::post('watchlist', [MovieController::class, 'addToWatchList'])->name('movie.watchlist');
+
+
 Route::get('/series', SeriesController::class)->name('series');
 
 Route::get('/search', SearchController::class)->name('search');
