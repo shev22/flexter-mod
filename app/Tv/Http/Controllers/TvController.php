@@ -1,42 +1,44 @@
 <?php
 
-namespace App\Movie\Http\Controllers;
-
+namespace App\Tv\Http\Controllers;
 
 use App\Enums\MediaType;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Movie\Http\Request\MoviesFilterRequest;
 use App\Movie\Resources\MovieResource;
 use App\Movie\Resources\ShowMovieResource;
 use App\Movie\Services\Interfaces\MovieServiceInterface;
+use App\Tv\Http\Request\TvFilterationRequest;
+use App\Tv\Resource\ShowTvResource;
+use App\Tv\Resource\TvResource;
+use App\Tv\Services\Interfaces\TvServiceInterface;
 use App\WatchList\Http\Request\WatchListFiltrationRequest;
 use App\WatchList\Services\Interfaces\WatchListServiceInterface;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class MovieController extends Controller
+class TvController extends Controller
 {
-    public function __construct(protected MovieServiceInterface $movieService, private readonly WatchListServiceInterface $watchListService)
+    public function __construct(protected TvServiceInterface $tvService, private readonly WatchListServiceInterface $watchListService)
     {}
 
-    public function __invoke(MoviesFilterRequest $request): Response
+    public function __invoke(TvFilterationRequest $request): Response
     {
-       $movies = $this->movieService->getMovies();
-       return Inertia::render('Main/Movies/Movies', [
-         'movies' => MovieResource::collection($movies),
-         'currentPage' => $movies->currentPage(),
-         'lastPage' => $movies->lastPage(),
-       ]);
-   }
+        $tv = $this->tvService->getTv();
+        return Inertia::render('Main/Tv/Tv', [
+            'tv' => TvResource::collection($tv),
+            'currentPage' => $tv->currentPage(),
+            'lastPage' => $tv->lastPage(),
+        ]);
+    }
 
-    public function show(string $slug, string $movieId): Response
+    public function show(string $slug, string $tvId): Response
     {
-        $movie = $this->movieService->getMovieWithRelatedMovies($movieId);
+        $tv = $this->tvService->getTvWithRelatedTv($tvId);
 
-        return Inertia::render('Main/Movies/Show', [
-            'movie' => ShowMovieResource::make($movie),
+        return Inertia::render('Main/Tv/Show', [
+            'tv' => ShowTvResource::make($tv),
         ]);
     }
 
@@ -52,7 +54,7 @@ class MovieController extends Controller
          * @var User $user
          */
         $user = Auth::user();
-        $type = MediaType::MOVIE->getMappedClass();
+        $type = MediaType::TV->getMappedClass();
         $this->watchListService->addToWatchList($user, $id, $type);
     }
 
@@ -68,7 +70,8 @@ class MovieController extends Controller
          * @var User $user
          */
         $user = Auth::user();
-        $type = MediaType::MOVIE->getMappedClass();
+        $type = MediaType::TV->getMappedClass();
+
         $this->watchListService->removeFromWatchList($user, $id, $type);
     }
 }

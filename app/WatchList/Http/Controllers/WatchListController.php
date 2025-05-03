@@ -4,6 +4,7 @@ namespace App\WatchList\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Movie\Resources\MovieResource;
+use App\Tv\Resource\TvResource;
 use App\WatchList\Http\Request\WatchListFiltrationRequest;
 use App\WatchList\Services\Interfaces\WatchListServiceInterface;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,8 @@ class WatchListController extends Controller
     {
         $userWatchLists = $this->watchListService->myWatchLists();
 
-        return Inertia::render('Main/Watchlist', ['myWatchLists' => MovieResource::collection($userWatchLists)]);
+        return Inertia::render('Main/Watchlist', [
+            'movies' => MovieResource::collection($userWatchLists['movie']),
+             'tv' => TvResource::collection($userWatchLists['tv'])]);
     }
-
 }

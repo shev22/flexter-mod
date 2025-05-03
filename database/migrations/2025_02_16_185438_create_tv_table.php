@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('series', function (Blueprint $table) {
+        Schema::create('tv', function (Blueprint $table) {
             $table->unsignedBigInteger('id')->primary();
             $table->string('backdrop_path')->nullable();
             $table->string('title')->nullable();

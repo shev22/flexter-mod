@@ -145,60 +145,6 @@ namespace App\Movie\Models{
 	class IdeHelperMovie {}
 }
 
-namespace App\Series\Models{
-/**
- * 
- *
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series query()
- * @mixin Eloquent
- * @property int $id
- * @property string|null $backdrop_path
- * @property string|null $title
- * @property string|null $genre_ids
- * @property string|null $logo
- * @property string $category
- * @property string|null $original_language
- * @property string|null $overview
- * @property string|null $popularity
- * @property string|null $poster_path
- * @property string|null $release_date
- * @property string $is_trending
- * @property string|null $trailer
- * @property string|null $runtime
- * @property string|null $vote_average
- * @property string|null $vote_count
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Genre\Models\Genre> $genres
- * @property-read int|null $genres_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\WatchList\Models\WatchList> $watchlists
- * @property-read int|null $watchlists_count
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereBackdropPath($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereCategory($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereGenreIds($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereIsTrending($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereLogo($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereOriginalLanguage($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereOverview($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series wherePopularity($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series wherePosterPath($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereReleaseDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereRuntime($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereTitle($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereTrailer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereVoteAverage($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series whereVoteCount($value)
- * @mixin \Eloquent
- */
-	#[\AllowDynamicProperties]
-	class IdeHelperSeries {}
-}
-
 namespace App\TopRated\Models{
 /**
  * 
@@ -245,6 +191,24 @@ namespace App\TopRated\Models{
 	class IdeHelperTopRated {}
 }
 
+namespace App\Tv\Models{
+/**
+ * 
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Tv newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Tv newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Tv query()
+ * @mixin Eloquent
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Genre\Models\Genre> $genres
+ * @property-read int|null $genres_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\WatchList\Models\WatchList> $watchlists
+ * @property-read int|null $watchlists_count
+ * @mixin \Eloquent
+ */
+	#[\AllowDynamicProperties]
+	class IdeHelperTv {}
+}
+
 namespace App\WatchList\Models{
 /**
  * 
@@ -253,7 +217,7 @@ namespace App\WatchList\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|WatchList newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|WatchList query()
  * @mixin Eloquent
- * @property Movie|Series $media
+ * @property Movie|Tv $media
  * @property int $id
  * @property int $user_id
  * @property string $media_type

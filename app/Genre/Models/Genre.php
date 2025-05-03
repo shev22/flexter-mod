@@ -3,6 +3,7 @@
 namespace App\Genre\Models;
 
 use App\Movie\Models\Movie;
+use App\Tv\Models\Tv;
 use Barryvdh\LaravelIdeHelper\Eloquent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -23,5 +24,10 @@ class Genre extends Model
     public function movies(): BelongsToMany
     {
         return $this->belongsToMany(Movie::class);
+    }
+
+    public function tv(): BelongsToMany
+    {
+        return $this->belongsToMany(Tv::class);
     }
 }

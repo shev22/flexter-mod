@@ -4,7 +4,8 @@ namespace App\Enums;
 
 use App\Actor\Models\Actor;
 use App\Movie\Models\Movie;
-use App\Series\Models\Series;
+use App\Tv\Models\Tv;
+
 
 enum MediaType: int
 {
@@ -27,7 +28,7 @@ enum MediaType: int
     {
         return match ($this) {
             self::MOVIE => Movie::class,
-            self::TV => Series::class,
+            self::TV => Tv::class,
             self::PERSON => Actor::class,
         };
     }

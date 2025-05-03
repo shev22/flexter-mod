@@ -4,7 +4,7 @@ namespace App\WatchList\Models;
 
 use App\Models\User;
 use App\Movie\Models\Movie;
-use App\Series\Models\Series;
+use App\Tv\Models\Tv;
 use App\WishList\Models\IdeHelperWishList;
 use Barryvdh\LaravelIdeHelper\Eloquent;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|WatchList newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|WatchList query()
  * @mixin Eloquent
- * @property Movie|Series $media
+ * @property Movie|Tv $media
  * @mixin IdeHelperWatchList
  */
 class WatchList extends Model

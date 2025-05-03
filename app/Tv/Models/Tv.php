@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Series\Models;
+namespace App\Tv\Models;
 
 use App\Genre\Models\Genre;
 use App\WatchList\Models\WatchList;
@@ -10,17 +10,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Series query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Tv newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Tv newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Tv query()
  * @mixin Eloquent
- * @mixin IdeHelperSeries
+ * @mixin IdeHelperTv
  */
-class Series extends Model
+class Tv extends Model
 {
+    protected $table = 'tv';
     protected $fillable =
         [
-            'series_id',
             'backdrop_path',
             'title',
             'logo',

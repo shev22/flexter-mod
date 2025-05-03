@@ -1,6 +1,7 @@
 <?php
 
 return [
+    App\Tv\Providers\TvServiceProvider::class,
     App\Providers\AppServiceProvider::class,
     App\Actor\Providers\ActorsServiceProvider::class,
     App\Movie\Providers\MoviesServiceProvider::class,
