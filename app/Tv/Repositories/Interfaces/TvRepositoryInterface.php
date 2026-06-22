@@ -2,7 +2,7 @@
 
 namespace App\Tv\Repositories\Interfaces;
 
-use App\Movie\Models\Movie;
+use App\Shared\Data\MediaFilterData;
 use App\Tv\Models\Tv;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -10,27 +10,19 @@ use Illuminate\Support\Collection;
 
 interface TvRepositoryInterface
 {
-    /**
-     * @param int $category
-     * @param Collection $data
-     * @return void
-     */
-    public function createRecord(int $category, collection $data): void;
+    public function createRecord(int $category, Collection $data): void;
 
-    /**
-     * @return EloquentCollection
-     */
     public function getTrending(): EloquentCollection;
 
     /**
-     * @return LengthAwarePaginator
+     * Paginated, filtered library listing for the TV index.
      */
-    public function tv(): LengthAwarePaginator;
+    public function tv(MediaFilterData $filter): LengthAwarePaginator;
 
     /**
-     * @param int $mediaId
-     * @return Tv|null
+     * A capped collection of shows for a single category (home rails).
      */
-    public function find(int $mediaId): Tv|null;
+    public function byCategory(int $category, int $limit = 20): EloquentCollection;
 
+    public function find(int $mediaId): Tv|null;
 }

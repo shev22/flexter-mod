@@ -1,20 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" class="dark" data-accent="aurora">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#9333ea" />
+    <link rel="manifest" href="/manifest.json" />
+    <title inertia>Flexter</title>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&family=Moon+Dance&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    @vite('resources/js/app.js')
+    <link rel="preconnect" href="https://image.tmdb.org">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+
     @routes
+    @vite('resources/js/app.js')
     @inertiaHead
 </head>
-
-<body class="font-Roboto_Condensed ">
+<body>
 @inertia
 </body>
 </html>

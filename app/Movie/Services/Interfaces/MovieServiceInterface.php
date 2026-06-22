@@ -2,6 +2,7 @@
 
 namespace App\Movie\Services\Interfaces;
 
+use App\Shared\Data\MediaFilterData;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 
@@ -35,7 +36,7 @@ interface MovieServiceInterface
     /**
      * @return LengthAwarePaginator
      */
-    public function getMovies(): LengthAwarePaginator;
+    public function getMovies(MediaFilterData $filter): LengthAwarePaginator;
 
     /**
      * @param string $movieId

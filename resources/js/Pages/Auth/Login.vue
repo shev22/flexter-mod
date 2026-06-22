@@ -1,66 +1,45 @@
-<template>
-<div>
-    <Head title=" | Login"/>
-    Login
-</div>
-    <div id="app">
-        <form @submit.prevent="submit" class="registration-form">
-            <TextInput name="email" type="email" v-model="form.email" :message="form.errors.email" />
-            <TextInput name="password" v-model="form.password" :message="form.errors.name" />
-            <div>
-                <input type="checkbox" v-model="form.remember">
-                <label>Remember me</label>
-            </div>
-            <button type="submit" :disabled="form.processing">Login</button>
-        </form>
-        <p class="sign-in-link">Need an account? <a href="login">Register</a></p>
-    </div>
-</template>
-
 <script setup>
-import {Head, useForm} from "@inertiajs/vue3";
-import TextInput from "../../Components/TextInput.vue";
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { route } from 'ziggy-js';
+import AuthLayout from '../../Layouts/AuthLayout.vue';
+import AppButton from '../../Components/ui/AppButton.vue';
 
-const form = useForm({
-    email: null,
-    password: null,
-    remember: null
-});
+defineOptions({ layout: AuthLayout });
 
-const submit =() => {
-    form.post('login', {
-        onError: () => form.reset('password, remember')
-    })
+const form = useForm({ email: '', password: '', remember: false });
+
+function submit() {
+    form.post(route('login'), { onFinish: () => form.reset('password') });
 }
 </script>
 
-<style scoped>
+<template>
+    <Head title="Sign in" />
 
-.registration-form {
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-button {
-    background-color: #d0f1a3; /* Lemon green highlight */
-    color: #333;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
+    <h1 class="font-display text-3xl font-extrabold text-ink">Welcome back</h1>
+    <p class="mt-2 text-sm text-muted">Sign in to continue to your watchlist.</p>
 
-button:hover {
-    background-color: #c2e692; /* Darker lemon green on hover */
-}
+    <form class="mt-8 space-y-4" @submit.prevent="submit">
+        <div>
+            <label class="mb-1.5 block text-sm font-medium text-ink">Email</label>
+            <input v-model="form.email" type="email" autocomplete="email" class="w-full rounded-xl glass px-4 py-3 text-sm text-ink focus:outline-none focus:ring-accent" />
+            <p v-if="form.errors.email" class="mt-1 text-xs text-rose-400">{{ form.errors.email }}</p>
+        </div>
+        <div>
+            <label class="mb-1.5 block text-sm font-medium text-ink">Password</label>
+            <input v-model="form.password" type="password" autocomplete="current-password" class="w-full rounded-xl glass px-4 py-3 text-sm text-ink focus:outline-none focus:ring-accent" />
+            <p v-if="form.errors.password" class="mt-1 text-xs text-rose-400">{{ form.errors.password }}</p>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-muted">
+            <input v-model="form.remember" type="checkbox" class="h-4 w-4 rounded border-hair/20 bg-transparent text-accent focus:ring-accent" />
+            Remember me
+        </label>
 
-.sign-in-link a {
-    color: #d0f1a3; /* Lemon green highlight */
-    text-decoration: none;
-}
+        <AppButton type="submit" block :disabled="form.processing">Sign in</AppButton>
+    </form>
 
-.sign-in-link a:hover {
-    text-decoration: underline;
-}
-</style>
+    <p class="mt-6 text-center text-sm text-muted">
+        New to Flexter?
+        <Link :href="route('register')" class="font-semibold text-accent">Create an account</Link>
+    </p>
+</template>

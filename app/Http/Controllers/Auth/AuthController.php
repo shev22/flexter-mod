@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -20,6 +21,7 @@ class AuthController extends Controller
         ]);
 
         $user = User::query()->create($fields);
+        $user->assignRole(Role::User->value);
         Auth::login($user);
 
         return redirect()->route('home');
@@ -33,7 +35,7 @@ class AuthController extends Controller
         ]);
         if(Auth::attempt($fields, $request->remember)) {
             $request->session()->regenerate();
-            return redirect()->route('dashboard');
+            return redirect()->intended(route('home'));
         }
 
         return back()->withErrors([

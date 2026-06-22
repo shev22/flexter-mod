@@ -2,17 +2,15 @@
 
 namespace App\Repositories\Interfaces;
 
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 
 interface HomeRepositoryInterface
 {
-    /**
-     * @return array
-     */
-    public function loadHomePageMoviesData(): array;
+    public function trendingMovies(int $limit = 8): EloquentCollection;
 
-    /**
-     * @return array
-     */
-    public function loadHomePageTvData(): array;
+    public function trendingTv(int $limit = 8): EloquentCollection;
+
+    public function movieRail(int $category, int $limit = 20): EloquentCollection;
+
+    public function tvRail(int $category, int $limit = 20): EloquentCollection;
 }

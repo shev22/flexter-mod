@@ -21,7 +21,7 @@ class ShowTvResource extends JsonResource
             'backdrop_path' => $this['backdrop_path'],
             'overview' => $this['overview'],
             'in_watchlist' => $this->inWatchlist(),
-            'year' => Carbon::parse($this['first_air_date'])->format('F, Y'),
+            'year' => Carbon::parse($this['first_air_date'])->format('M, Y'),
             'genres' => collect($this['genres'])->pluck('name')->flatten()->implode(',  '),
             'seasons' => count($this['seasons']),
             'vote_average' => $this['vote_average'] < 1

@@ -3,7 +3,9 @@
 namespace App\Tv\Repositories;
 
 use App\Enums\Categories;
-use App\Movie\Models\Movie;
+use App\Shared\Data\MediaFilterData;
+use App\Shared\Support\GenrePivotSync;
+use App\Shared\Support\MediaQuery;
 use App\Tv\Models\Tv;
 use App\Tv\Repositories\Interfaces\TvRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -16,9 +18,22 @@ class TvRepository implements TvRepositoryInterface
     /**
      * @inheritDoc
      */
-    public function tv(): LengthAwarePaginator
+    public function tv(MediaFilterData $filter): LengthAwarePaginator
     {
-        return Tv::latest()->paginate(20);
+        return MediaQuery::apply(Tv::query(), $filter)
+            ->paginate($filter->perPage)
+            ->withQueryString();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function byCategory(int $category, int $limit = 20): EloquentCollection
+    {
+        return Tv::where('category', $category)
+            ->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC')
+            ->limit($limit)
+            ->get();
     }
 
     /**
@@ -48,10 +63,11 @@ class TvRepository implements TvRepositoryInterface
             'updated_at' => now(),
         ])->toArray();
 
+        // logo + trailer are enriched separately — never overwrite them during list sync.
         Tv::upsert($tvs, ['id'], [
-            'title', 'poster_path', 'backdrop_path', 'overview', 'release_date', 'trailer', 'logo',
+            'title', 'poster_path', 'backdrop_path', 'overview', 'release_date',
             'vote_average', 'vote_count', 'original_language', 'is_trending', 'popularity',
-            'category', 'genre_ids', 'updated_at'
+            'category', 'genre_ids', 'updated_at',
         ]);
 
         $insertedTvs = Tv::whereIn('id', $tvIds)->get();
@@ -82,13 +98,7 @@ class TvRepository implements TvRepositoryInterface
      */
     private function associateGenre($tv):void
     {
-        $tv->each(function ($tv) {
-            $genres = json_decode($tv->genre_ids, true);
-
-            if (!empty($genres)) {
-                $tv->genres()->sync($genres);
-            }
-        });
+        GenrePivotSync::syncTv(collect($tv));
     }
 
     private function extractGenreIds(array $tv): array|string|null

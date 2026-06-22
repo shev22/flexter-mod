@@ -5,43 +5,67 @@ namespace App\Repositories\HomeRepository;
 use App\Enums\Categories;
 use App\Movie\Models\Movie;
 use App\Repositories\Interfaces\HomeRepositoryInterface;
+use App\Shared\Support\HomeCache;
 use App\Tv\Models\Tv;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Facades\Cache;
 
 class HomeRepository implements HomeRepositoryInterface
 {
-    public function loadHomePageMoviesData(): array
+    /** @var array<int, string> */
+    private const LIST_COLUMNS = [
+        'id', 'title', 'poster_path', 'backdrop_path', 'logo', 'trailer',
+        'release_date', 'vote_average', 'popularity', 'genre_ids', 'category',
+        'is_trending', 'overview',
+    ];
+
+    public function trendingMovies(int $limit = 8): EloquentCollection
     {
-        $nowPlayingMovies = Movie::where('category', Categories::NOW_PLAYING)
-            ->take(40)
-            ->orderBy('created_at', 'desc')
+        return Movie::query()
+            ->select(self::LIST_COLUMNS)
+            ->where('is_trending', true)
+            ->whereNotNull('backdrop_path')
+            ->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC')
+            ->limit($limit)
             ->get();
-        $trending = Movie::where('category', Categories::TRENDING)->where('is_trending', true)->get();
-
-        return [
-            'nowPlayingMovies' => $nowPlayingMovies,
-            'trending' => $trending,
-        ];
-
-
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function loadHomePageTvData(): array
+    public function trendingTv(int $limit = 8): EloquentCollection
     {
-        $airingToday = Tv::where('category', Categories::AIRING_TODAY)
-            ->take(40)
-            ->orderBy('created_at', 'desc')
+        return Tv::query()
+            ->select(self::LIST_COLUMNS)
+            ->where('is_trending', true)
+            ->whereNotNull('backdrop_path')
+            ->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC')
+            ->limit($limit)
             ->get();
+    }
 
-        $trending = Tv::where('category', Categories::TRENDING)->where('is_trending', true)->get();
+    public function movieRail(int $category, int $limit = 20): EloquentCollection
+    {
+        return Cache::remember(
+            HomeCache::railKey('movie', $category, $limit),
+            now()->addMinutes(30),
+            fn () => Movie::query()
+                ->select(self::LIST_COLUMNS)
+                ->where('category', $category)
+                ->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC')
+                ->limit($limit)
+                ->get(),
+        );
+    }
 
-        return [
-            'airingToday' => $airingToday,
-            'trending' => $trending,
-        ];
+    public function tvRail(int $category, int $limit = 20): EloquentCollection
+    {
+        return Cache::remember(
+            HomeCache::railKey('tv', $category, $limit),
+            now()->addMinutes(30),
+            fn () => Tv::query()
+                ->select(self::LIST_COLUMNS)
+                ->where('category', $category)
+                ->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC')
+                ->limit($limit)
+                ->get(),
+        );
     }
 }
-
-

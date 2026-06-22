@@ -45,4 +45,9 @@ interface MediaApiClientInterface
      * @return collection
      */
     public function search(string $query):collection;
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function fetchPersonCredits(int $actorId): array;
 }

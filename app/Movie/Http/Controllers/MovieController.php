@@ -2,14 +2,18 @@
 
 namespace App\Movie\Http\Controllers;
 
-
+use App\Comment\Services\Interfaces\CommentServiceInterface;
 use App\Enums\MediaType;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Movie\Http\Request\MoviesFilterRequest;
-use App\Movie\Resources\MovieResource;
-use App\Movie\Resources\ShowMovieResource;
 use App\Movie\Services\Interfaces\MovieServiceInterface;
+use App\Shared\Data\MediaDetailData;
+use App\Shared\Data\MediaCardData;
+use App\Shared\Data\MediaFilterData;
+use App\Shared\Support\Present;
+use App\Shared\Support\Watchlist;
+use App\WatchHistory\Services\Interfaces\WatchHistoryServiceInterface;
 use App\WatchList\Http\Request\WatchListFiltrationRequest;
 use App\WatchList\Services\Interfaces\WatchListServiceInterface;
 use Illuminate\Support\Facades\Auth;
@@ -18,57 +22,59 @@ use Inertia\Response;
 
 class MovieController extends Controller
 {
-    public function __construct(protected MovieServiceInterface $movieService, private readonly WatchListServiceInterface $watchListService)
-    {}
+    public function __construct(
+        protected MovieServiceInterface $movieService,
+        private readonly WatchListServiceInterface $watchListService,
+        private readonly WatchHistoryServiceInterface $watchHistoryService,
+        private readonly CommentServiceInterface $commentService,
+    ) {}
 
     public function __invoke(MoviesFilterRequest $request): Response
     {
-       $movies = $this->movieService->getMovies();
-       return Inertia::render('Main/Movies/Movies', [
-         'movies' => MovieResource::collection($movies),
-         'currentPage' => $movies->currentPage(),
-         'lastPage' => $movies->lastPage(),
-       ]);
-   }
+        $filter = MediaFilterData::fromRequest($request);
 
-    public function show(string $slug, string $movieId): Response
-    {
-        $movie = $this->movieService->getMovieWithRelatedMovies($movieId);
-
-        return Inertia::render('Main/Movies/Show', [
-            'movie' => ShowMovieResource::make($movie),
+        return Inertia::render('Movies/Index', [
+            'movies' => Present::paginated($this->movieService->getMovies($filter)),
+            'filters' => $filter,
         ]);
     }
 
-    /**
-     * @param WatchListFiltrationRequest $request
-     * @return void
-     */
-    public function addToWatchList(WatchListFiltrationRequest $request):void
+    public function show(string $slug, string $movieId): Response
     {
-        $id = $request->input('id');
+        $detail = $this->movieService->getMovieWithRelatedMovies($movieId);
 
-        /**
-         * @var User $user
-         */
-        $user = Auth::user();
-        $type = MediaType::MOVIE->getMappedClass();
-        $this->watchListService->addToWatchList($user, $id, $type);
+        $related = collect($detail['related'] ?? [])
+            ->take(12)
+            ->map(fn ($item) => MediaCardData::fromTmdb($item, 'movie', Watchlist::has('movie', (int) ($item['id'] ?? 0)))->toArray())
+            ->values()
+            ->all();
+
+        $watchProgress = null;
+        if ($user = Auth::user()) {
+            $entry = $this->watchHistoryService->progressFor($user, 'movie', (int) $movieId);
+            $watchProgress = $entry ? (int) $entry->progress_percent : 0;
+        }
+
+        $media = MediaDetailData::fromTmdb($detail, 'movie', $related, Watchlist::has('movie', (int) ($detail['id'] ?? 0)));
+
+        return Inertia::render('Movies/Show', [
+            'media' => $media->toArray(),
+            'watchProgress' => $watchProgress,
+            'comments' => $this->commentService->forMedia('movie', (int) $movieId, $user),
+        ]);
     }
 
-    /**
-     * @param WatchListFiltrationRequest $request
-     * @return void
-     */
-    public function removeFromWatchList(WatchListFiltrationRequest $request):void
+    public function addToWatchList(WatchListFiltrationRequest $request): void
     {
-        $id = $request->input('id');
-
-        /**
-         * @var User $user
-         */
+        /** @var User $user */
         $user = Auth::user();
-        $type = MediaType::MOVIE->getMappedClass();
-        $this->watchListService->removeFromWatchList($user, $id, $type);
+        $this->watchListService->addToWatchList($user, (int) $request->input('id'), MediaType::MOVIE->getMappedClass());
+    }
+
+    public function removeFromWatchList(WatchListFiltrationRequest $request): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $this->watchListService->removeFromWatchList($user, (int) $request->input('id'), MediaType::MOVIE->getMappedClass());
     }
 }

@@ -25,6 +25,7 @@ terminal:
 
 start:
 	./vendor/bin/sail up -d
+	@docker exec laravel_app sh -c "test -x node_modules/.bin/vite || npm install"
 	@docker exec -it laravel_app npm run dev
 restart:
 	@make stop

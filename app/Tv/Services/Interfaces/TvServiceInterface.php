@@ -2,6 +2,7 @@
 
 namespace App\Tv\Services\Interfaces;
 
+use App\Shared\Data\MediaFilterData;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface TvServiceInterface
@@ -34,7 +35,7 @@ interface TvServiceInterface
     /**
      * @return LengthAwarePaginator
      */
-    public function getTv():LengthAwarePaginator;
+    public function getTv(MediaFilterData $filter): LengthAwarePaginator;
 
     /**
      * @param string $tvId

@@ -5,6 +5,9 @@ namespace App\Movie\Repositories;
 use App\Enums\Categories;
 use App\Movie\Models\Movie;
 use App\Movie\Repositories\Interfaces\MovieRepositoryInterface;
+use App\Shared\Data\MediaFilterData;
+use App\Shared\Support\GenrePivotSync;
+use App\Shared\Support\MediaQuery;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -38,10 +41,11 @@ class MovieRepository implements MovieRepositoryInterface
             'updated_at' => now(),
         ])->toArray();
 
+        // logo + trailer are enriched separately — never overwrite them during list sync.
         Movie::upsert($movies, ['id'], [
-            'title', 'poster_path', 'backdrop_path', 'overview', 'release_date', 'trailer', 'logo',
+            'title', 'poster_path', 'backdrop_path', 'overview', 'release_date',
             'vote_average', 'vote_count', 'original_language', 'is_trending', 'popularity',
-            'category', 'genre_ids', 'updated_at'
+            'category', 'genre_ids', 'updated_at',
         ]);
 
         $insertedMovies = Movie::whereIn('id', $movieIds)->get();
@@ -51,9 +55,22 @@ class MovieRepository implements MovieRepositoryInterface
     /**
      * @inheritdoc
      */
-    public function movies(): LengthAwarePaginator
+    public function movies(MediaFilterData $filter): LengthAwarePaginator
     {
-        return Movie::latest()->paginate(20);
+        return MediaQuery::apply(Movie::query(), $filter)
+            ->paginate($filter->perPage)
+            ->withQueryString();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function byCategory(int $category, int $limit = 20): EloquentCollection
+    {
+        return Movie::where('category', $category)
+            ->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC')
+            ->limit($limit)
+            ->get();
     }
 
     /**
@@ -81,13 +98,7 @@ class MovieRepository implements MovieRepositoryInterface
      */
     private function associateGenre($movies):void
     {
-        $movies->each(function ($movie) {
-            $genres = json_decode($movie->genre_ids, true);
-
-            if (!empty($genres)) {
-                $movie->genres()->sync($genres);
-            }
-        });
+        GenrePivotSync::syncMovies(collect($movies));
     }
 
     private function extractGenreIds(array $movie): array|string|null

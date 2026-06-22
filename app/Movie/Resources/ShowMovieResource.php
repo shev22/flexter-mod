@@ -21,7 +21,7 @@ class ShowMovieResource extends JsonResource
             'backdrop_path' => $this['backdrop_path'],
             'overview' => $this['overview'],
             'in_watchlist' => $this->inWatchlist(),
-            'year' => Carbon::parse($this['release_date'])->format('F, Y'),
+            'year' => Carbon::parse($this['release_date'])->format('M, Y'),
             'genres' => collect($this['genres'])->pluck('name')->flatten()->implode(',  '),
             'runtime' => $this['runtime'],
             'vote_average' => $this['vote_average'] < 1

@@ -4,18 +4,20 @@ namespace App\Tv\Services;
 
 use App\Enums\Categories;
 use App\Enums\MediaType;
-use App\Movie\Resources\MovieResource;
-use App\Tv\Resource\TvResource;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use App\Services\MediaService\Interfaces\MediaApiClientInterface;
+use App\Shared\Data\MediaFilterData;
+use App\Site\Services\Interfaces\SiteSettingsServiceInterface;
 use App\Tv\Repositories\Interfaces\TvRepositoryInterface;
 use App\Tv\Services\Interfaces\TvServiceInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class TvService implements TvServiceInterface
 {
-    public function __construct(protected  MediaApiClientInterface $mediaApiClient, protected TvRepositoryInterface $tvRepository)
-    {
+    public function __construct(
+        protected MediaApiClientInterface $mediaApiClient,
+        protected TvRepositoryInterface $tvRepository,
+        protected SiteSettingsServiceInterface $siteSettings,
+    ) {
     }
 
     /**
@@ -23,7 +25,8 @@ class TvService implements TvServiceInterface
      */
     public function popular(): void
     {
-        $popular = $this->mediaApiClient->fetchMedia(MediaType::TV->getLabel(), Categories::POPULAR->getLabel(), 20);
+        $pages = $this->siteSettings->get()->syncPages(MediaType::TV->getLabel(), Categories::POPULAR->getLabel());
+        $popular = $this->mediaApiClient->fetchMedia(MediaType::TV->getLabel(), Categories::POPULAR->getLabel(), $pages);
 
         $this->tvRepository->createRecord(Categories::POPULAR->value, $popular);
     }
@@ -33,7 +36,8 @@ class TvService implements TvServiceInterface
      */
     public function onTheAir(): void
     {
-        $onTheAir = $this->mediaApiClient->fetchMedia(MediaType::TV->getLabel(), Categories::ON_THE_AIR->getLabel(), 20);
+        $pages = $this->siteSettings->get()->syncPages(MediaType::TV->getLabel(), Categories::ON_THE_AIR->getLabel());
+        $onTheAir = $this->mediaApiClient->fetchMedia(MediaType::TV->getLabel(), Categories::ON_THE_AIR->getLabel(), $pages);
         $this->tvRepository->createRecord(Categories::ON_THE_AIR->value, $onTheAir);
     }
 
@@ -42,7 +46,8 @@ class TvService implements TvServiceInterface
      */
     public function topRated(): void
     {
-        $topRated = $this->mediaApiClient->fetchMedia(MediaType::TV->getLabel(), Categories::TOP_RATED->getLabel(), 20);
+        $pages = $this->siteSettings->get()->syncPages(MediaType::TV->getLabel(), Categories::TOP_RATED->getLabel());
+        $topRated = $this->mediaApiClient->fetchMedia(MediaType::TV->getLabel(), Categories::TOP_RATED->getLabel(), $pages);
         $this->tvRepository->createRecord(Categories::TOP_RATED->value, $topRated);
     }
 
@@ -78,7 +83,8 @@ class TvService implements TvServiceInterface
      */
     public function AiringToday(): void
     {
-        $airingToday = $this->mediaApiClient->fetchMedia(MediaType::TV->getLabel(), Categories::AIRING_TODAY->getLabel(), 20);
+        $pages = $this->siteSettings->get()->syncPages(MediaType::TV->getLabel(), Categories::AIRING_TODAY->getLabel());
+        $airingToday = $this->mediaApiClient->fetchMedia(MediaType::TV->getLabel(), Categories::AIRING_TODAY->getLabel(), $pages);
         $this->tvRepository->createRecord(Categories::AIRING_TODAY->value, $airingToday);
     }
 
@@ -87,26 +93,27 @@ class TvService implements TvServiceInterface
      */
     public function getTvWithRelatedTv(string $tvId): array
     {
-        $tv = $this->mediaApiClient->fetchMediaWithDetails($tvId, MediaType::TV->getLabel());
+        return \Illuminate\Support\Facades\Cache::remember(
+            "media.detail:tv:{$tvId}",
+            now()->addDay(),
+            function () use ($tvId) {
+                $tv = $this->mediaApiClient->fetchMediaWithDetails($tvId, MediaType::TV->getLabel());
 
-        if ($tv) {
-            $resource = $this->mediaApiClient->fetchRelatedMedia($tvId, MediaType::TV->getLabel());
+                if ($tv) {
+                    $resource = $this->mediaApiClient->fetchRelatedMedia($tvId, MediaType::TV->getLabel());
+                    $tv['related'] = $resource['results'] ?? [];
+                }
 
-            $results = $resource['results'] ?? [];
-            $related = TvResource::collection($results)->resolve();
-
-            $tv['related'] = $related;
-        }
-
-        return $tv;
-
+                return $tv;
+            },
+        );
     }
 
     /**
      * @inheritDoc
      */
-    public function getTv(): LengthAwarePaginator
+    public function getTv(MediaFilterData $filter): LengthAwarePaginator
     {
-        return $this->tvRepository->tv();
+        return $this->tvRepository->tv($filter);
     }
 }
