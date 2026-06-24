@@ -14,6 +14,7 @@ defineProps({
 
 <template>
     <MediaDetail
+        :key="`${media.type}-${media.id}`"
         :media="media"
         :watch-progress="watchProgress"
         :watch-context="watchContext"

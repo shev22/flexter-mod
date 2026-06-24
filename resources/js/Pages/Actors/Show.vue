@@ -16,6 +16,18 @@ const props = defineProps({
 const { toggleActor } = useWatchlist();
 const favorite = ref(props.is_favorite);
 
+watch(
+    () => props.actor.id,
+    () => {
+        favorite.value = props.is_favorite;
+        tab.value = 'movies';
+        query.value = '';
+        years.value = [];
+        ratings.value = [];
+        bioExpanded.value = false;
+    },
+);
+
 const tab = ref('movies');
 const query = ref('');
 const years = ref([]);

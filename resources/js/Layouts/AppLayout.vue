@@ -30,7 +30,7 @@ useKeyboardShortcuts(helpOpen);
 watch(
     () => page.props.settings,
     (settings) => applyAppearance(settings),
-    { deep: true },
+    { deep: true, immediate: true },
 );
 
 watch(
@@ -82,7 +82,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
                 @open-search="searchOpen = true"
             />
             <main :class="[hero ? '' : 'pt-16', showMaintenance ? 'mt-10' : '', 'pb-20 lg:pb-0']">
-                <slot />
+                <div :key="page.url">
+                    <slot />
+                </div>
                 <AppFooter />
             </main>
         </div>

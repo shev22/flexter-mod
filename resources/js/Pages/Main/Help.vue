@@ -34,8 +34,10 @@ const sections = [
         items: [
             'Browse the full catalogue from Movies or Series in the sidebar.',
             'Open any title for overview, cast, rating, genres, and related titles.',
+            'Watch now streams the full movie or episode via the embedded player.',
+            'For series, pick season and episode before watching — progress syncs as you play.',
+            'Use Play trailer for the YouTube preview player.',
             'Hover the backdrop on a detail page to play a muted trailer preview.',
-            'Use Play trailer for the full-screen player — progress can update your watch history.',
         ],
     },
     {
@@ -60,10 +62,10 @@ const sections = [
         icon: SparklesIcon,
         title: 'Watch progress & history',
         items: [
-            'Mark watched or let trailer progress update your percentage on detail pages.',
-            'For series, pick season and episode before marking progress.',
-            'Continue watching on home reflects your latest activity.',
-            'Clear or remove individual entries from Settings → Watch history.',
+            'Watch now streams movies and episodes — progress updates automatically while you play.',
+            'For series, pick season and episode before watching, or let auto-next advance you.',
+            'Signed-in members sync progress to Continue watching and Settings → Watch history.',
+            'Mark watched sets 100% manually when you have finished a title.',
         ],
     },
     {
@@ -128,7 +130,7 @@ const sections = [
 <template>
     <Head title="Help" />
 
-    <div class="mx-auto max-w-3xl px-4 pb-20 lg:px-8">
+    <div class="mx-auto max-w-3xl">
         <div class="py-10">
             <p class="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-accent">Guide</p>
             <h1 class="font-display text-4xl font-extrabold text-ink sm:text-5xl">How Flexter works</h1>

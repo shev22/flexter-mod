@@ -5,6 +5,7 @@ namespace App\WatchHistory\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\WatchHistory\Services\Interfaces\WatchHistoryServiceInterface;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +17,7 @@ class WatchHistoryController extends Controller
     {
     }
 
-    public function touch(Request $request): RedirectResponse
+    public function touch(Request $request): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'type' => ['required', Rule::in(['movie', 'tv'])],
@@ -28,7 +29,7 @@ class WatchHistoryController extends Controller
 
         /** @var User $user */
         $user = Auth::user();
-        $this->history->touch(
+        $progress = $this->history->touch(
             $user,
             $validated['type'],
             (int) $validated['id'],
@@ -36,6 +37,10 @@ class WatchHistoryController extends Controller
             isset($validated['season']) ? (int) $validated['season'] : null,
             isset($validated['episode']) ? (int) $validated['episode'] : null,
         );
+
+        if ($request->wantsJson()) {
+            return response()->json(['progress' => $progress]);
+        }
 
         return back();
     }
@@ -62,7 +67,7 @@ class WatchHistoryController extends Controller
         return back();
     }
 
-    public function bump(Request $request): RedirectResponse
+    public function bump(Request $request): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'type' => ['required', Rule::in(['movie', 'tv'])],
@@ -74,7 +79,7 @@ class WatchHistoryController extends Controller
 
         /** @var User $user */
         $user = Auth::user();
-        $this->history->bumpProgress(
+        $progress = $this->history->bumpProgress(
             $user,
             $validated['type'],
             (int) $validated['id'],
@@ -82,6 +87,10 @@ class WatchHistoryController extends Controller
             isset($validated['season']) ? (int) $validated['season'] : null,
             isset($validated['episode']) ? (int) $validated['episode'] : null,
         );
+
+        if ($request->wantsJson()) {
+            return response()->json(['progress' => $progress]);
+        }
 
         return back();
     }

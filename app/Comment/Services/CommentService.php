@@ -21,6 +21,7 @@ class CommentService implements CommentServiceInterface
             $this->cacheKey($mediaType, $mediaId),
             config('flexter.cache.comments_ttl'),
             fn () => Comment::query()
+                ->visible()
                 ->with(['user:id,name'])
                 ->withCount('likes')
                 ->where('media_type', $mediaType)
@@ -138,6 +139,53 @@ class CommentService implements CommentServiceInterface
         return $result;
     }
 
+    public function flag(Comment $comment): void
+    {
+        $comment->update([
+            'is_flagged' => true,
+            'flagged_at' => now(),
+        ]);
+
+        $this->bustCache($comment->media_type, (int) $comment->media_id);
+    }
+
+    public function unflag(Comment $comment): void
+    {
+        $comment->update([
+            'is_flagged' => false,
+            'flagged_at' => null,
+        ]);
+
+        $this->bustCache($comment->media_type, (int) $comment->media_id);
+    }
+
+    public function block(Comment $comment): void
+    {
+        $comment->update([
+            'is_blocked' => true,
+            'blocked_at' => now(),
+        ]);
+
+        $this->bustCache($comment->media_type, (int) $comment->media_id);
+    }
+
+    public function unblock(Comment $comment): void
+    {
+        $comment->update([
+            'is_blocked' => false,
+            'blocked_at' => null,
+        ]);
+
+        $this->bustCache($comment->media_type, (int) $comment->media_id);
+    }
+
+    public function adminDelete(Comment $comment): void
+    {
+        $this->bustCache($comment->media_type, (int) $comment->media_id);
+
+        $comment->delete();
+    }
+
     /** @param  Collection<int|string, Collection<int, Comment>>  $byParent */
     private function buildNode(
         Comment $comment,
@@ -200,5 +248,6 @@ class CommentService implements CommentServiceInterface
     private function bustCache(string $mediaType, int $mediaId): void
     {
         Cache::forget($this->cacheKey($mediaType, $mediaId));
+        Cache::forget('filament.comments.flagged');
     }
 }

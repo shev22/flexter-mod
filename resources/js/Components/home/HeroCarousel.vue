@@ -17,6 +17,7 @@ const index = ref(0);
 const direction = ref(1); // 1 = advancing (slide left), -1 = going back (slide right)
 const showTrailer = ref(false);
 const hovered = ref(false);
+const controlsHovered = ref(false);
 let timer;
 
 const current = computed(() => props.items[index.value] ?? null);
@@ -29,7 +30,13 @@ const allowTrailer = computed(() => allowBackgroundTrailer(page.props.settings))
 const reduceMotion = computed(() => page.props.settings?.reduce_motion === true);
 
 function syncTrailer() {
-    showTrailer.value = !!(hovered.value && allowTrailer.value && !reduceMotion.value && current.value?.trailer);
+    showTrailer.value = !!(
+        hovered.value &&
+        !controlsHovered.value &&
+        allowTrailer.value &&
+        !reduceMotion.value &&
+        current.value?.trailer
+    );
 }
 
 function setIndex(target, dir) {
@@ -50,7 +57,7 @@ function go(i) {
     setIndex(i, i > index.value ? 1 : -1);
 }
 function start() {
-    if (reduceMotion.value) return;
+    if (reduceMotion.value || hovered.value) return;
     clearInterval(timer);
     timer = setInterval(() => go(index.value + 1), 7000);
 }
@@ -58,7 +65,7 @@ function pause() {
     clearInterval(timer);
 }
 function restart() {
-    if (!document.hidden) {
+    if (!document.hidden && !hovered.value) {
         start();
     }
 }
@@ -81,6 +88,16 @@ function onLeave() {
     hovered.value = false;
     syncTrailer();
     start();
+}
+
+function onControlsEnter() {
+    controlsHovered.value = true;
+    syncTrailer();
+}
+
+function onControlsLeave() {
+    controlsHovered.value = false;
+    syncTrailer();
 }
 
 watch(index, () => {
@@ -184,7 +201,11 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- controls -->
-        <div class="absolute bottom-6 right-4 z-10 hidden items-center gap-2 lg:flex lg:right-12">
+        <div
+            class="absolute bottom-6 right-4 z-10 hidden items-center gap-2 lg:flex lg:right-12"
+            @mouseenter="onControlsEnter"
+            @mouseleave="onControlsLeave"
+        >
             <button type="button" class="cinema-btn cinema-btn-icon h-10 w-10 shrink-0" @click="prev">
                 <ChevronLeftIcon class="h-5 w-5" />
             </button>
