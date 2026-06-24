@@ -27,8 +27,9 @@ class ActorsController extends Controller
     {
         $search = $request->filled('search') ? trim((string) $request->query('search')) : null;
         $sort = in_array($request->query('sort'), ['popularity', 'name'], true) ? $request->query('sort') : 'popularity';
+        $page = max(1, (int) $request->query('page', 1));
 
-        $actors = $this->actorService->getActors($search, $sort, 30);
+        $actors = $this->actorService->getActors($search, $sort, 30, $page);
 
         return Inertia::render('Actors/Index', [
             'actors' => [

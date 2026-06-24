@@ -2,6 +2,7 @@
 
 namespace App\List\Models;
 
+use App\Shared\Support\AppCache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -35,5 +36,13 @@ class FlexterList extends Model
     public function items(): HasMany
     {
         return $this->hasMany(FlexterListItem::class)->orderBy('sort_order');
+    }
+
+    protected static function booted(): void
+    {
+        $bust = fn () => AppCache::bustLists();
+
+        static::saved($bust);
+        static::deleted($bust);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Movie\Services\Interfaces\MovieServiceInterface;
 use App\Services\MediaService\MediaEnrichmentService;
+use App\Shared\Support\AppCache;
 use App\Shared\Support\HomeCache;
 use App\Tv\Services\Interfaces\TvServiceInterface;
 use Illuminate\Console\Command;
@@ -48,6 +49,7 @@ class RefreshTrending extends Command
         });
 
         HomeCache::bust();
+        AppCache::bustCatalogue();
 
         $this->newLine();
         $this->info('Trending status is up to date.');

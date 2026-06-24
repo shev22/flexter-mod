@@ -6,6 +6,7 @@ use App\Actor\Services\Interfaces\ActorServiceInterface;
 use App\Genre\Services\Interfaces\GenreServiceInterface;
 use App\Movie\Services\Interfaces\MovieServiceInterface;
 use App\Services\MediaService\MediaEnrichmentService;
+use App\Shared\Support\AppCache;
 use App\Tv\Services\Interfaces\TvServiceInterface;
 use Illuminate\Console\Command;
 
@@ -60,6 +61,7 @@ class FetchMedia extends Command
         }
 
         $this->newLine();
+        AppCache::bustCatalogueAndHome();
         $this->info('Flexter catalogue is up to date.');
 
         return self::SUCCESS;

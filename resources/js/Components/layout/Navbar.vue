@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import { Bars3Icon, XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/solid';
-import { BookmarkIcon, Cog6ToothIcon, ArrowRightStartOnRectangleIcon, Squares2X2Icon, EyeSlashIcon } from '@heroicons/vue/24/outline';
+import { BookmarkIcon, Cog6ToothIcon, ArrowRightStartOnRectangleIcon, Squares2X2Icon, EyeSlashIcon, QuestionMarkCircleIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     hero: { type: Boolean, default: false },
@@ -176,6 +176,9 @@ function toggleSpoilerFree() {
                                     <Link :href="route('settings')" class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink transition hover:bg-hair/10" @click="menuOpen = false">
                                         <Cog6ToothIcon class="h-4 w-4" /> Settings
                                     </Link>
+                                    <Link :href="route('help')" class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink transition hover:bg-hair/10" @click="menuOpen = false">
+                                        <QuestionMarkCircleIcon class="h-4 w-4" /> Help
+                                    </Link>
                                     <a
                                         v-if="isAdmin"
                                         href="/admin"
@@ -193,6 +196,14 @@ function toggleSpoilerFree() {
                     </div>
                 </template>
                 <template v-else>
+                    <Link
+                        :href="route('help')"
+                        class="hidden rounded-full px-3.5 py-2 text-sm font-semibold transition sm:inline-flex sm:items-center sm:gap-1.5"
+                        :class="solid ? 'glass text-ink hover:bg-hair/10' : 'border border-white/15 bg-white/10 text-white backdrop-blur-md hover:bg-white/20'"
+                    >
+                        <QuestionMarkCircleIcon class="h-4 w-4" />
+                        Help
+                    </Link>
                     <Link
                         :href="route('login')"
                         class="rounded-full px-4 py-2 text-sm font-semibold transition hover:bg-white/10"

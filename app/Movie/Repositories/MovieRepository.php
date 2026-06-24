@@ -6,6 +6,7 @@ use App\Enums\Categories;
 use App\Movie\Models\Movie;
 use App\Movie\Repositories\Interfaces\MovieRepositoryInterface;
 use App\Shared\Data\MediaFilterData;
+use App\Shared\Support\AppCache;
 use App\Shared\Support\GenrePivotSync;
 use App\Shared\Support\MediaQuery;
 use Illuminate\Support\Collection;
@@ -57,9 +58,12 @@ class MovieRepository implements MovieRepositoryInterface
      */
     public function movies(MediaFilterData $filter): LengthAwarePaginator
     {
-        return MediaQuery::apply(Movie::query(), $filter)
-            ->paginate($filter->perPage)
-            ->withQueryString();
+        return AppCache::catalogue(
+            'movies.'.$filter->cacheKey(),
+            fn () => MediaQuery::apply(Movie::query(), $filter)
+                ->paginate($filter->perPage, ['*'], 'page', $filter->page)
+                ->withQueryString(),
+        );
     }
 
     /**

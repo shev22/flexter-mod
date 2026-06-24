@@ -1,6 +1,14 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { onMounted } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
+import { applyAppearance } from '../lib/appearance.js';
+
+const page = usePage();
+
+onMounted(() => {
+    applyAppearance(page.props.settings);
+});
 </script>
 
 <template>

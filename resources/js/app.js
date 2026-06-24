@@ -2,7 +2,7 @@ import './bootstrap';
 import '../css/app.css';
 
 import { createApp, h } from 'vue';
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/';
 import AppLayout from './Layouts/AppLayout.vue';
 import { applyAppearance } from './lib/appearance.js';
@@ -33,6 +33,14 @@ createInertiaApp({
         color: 'rgb(168 85 247)',
         showSpinner: false,
     },
+});
+
+router.on('success', (event) => {
+    applyAppearance(event.detail.page.props.settings);
+});
+
+router.on('invalid', () => {
+    window.location.reload();
 });
 
 if ('serviceWorker' in navigator) {
