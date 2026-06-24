@@ -11,9 +11,13 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     libonig-dev \
     libxml2-dev \
-    && docker-php-ext-install pdo_mysql zip exif pcntl gd \
+    libicu-dev \
+    && docker-php-ext-install pdo_mysql zip exif pcntl gd intl \
     && docker-php-ext-install mysqli \
     && docker-php-ext-enable mysqli
+
+# Mounted volumes may be owned by the host user; allow git in this path.
+RUN git config --global --add safe.directory /var/www/html
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
