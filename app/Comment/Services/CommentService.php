@@ -8,6 +8,7 @@ use App\Comment\Models\CommentLike;
 use App\Comment\Services\Interfaces\CommentServiceInterface;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
 class CommentService implements CommentServiceInterface
@@ -16,13 +17,17 @@ class CommentService implements CommentServiceInterface
 
     public function forMedia(string $mediaType, int $mediaId, ?User $viewer = null, string $sort = 'newest'): array
     {
-        $comments = Comment::query()
-            ->with(['user:id,name'])
-            ->withCount('likes')
-            ->where('media_type', $mediaType)
-            ->where('media_id', $mediaId)
-            ->orderBy('created_at')
-            ->get();
+        $comments = Cache::remember(
+            $this->cacheKey($mediaType, $mediaId),
+            config('flexter.cache.comments_ttl'),
+            fn () => Comment::query()
+                ->with(['user:id,name'])
+                ->withCount('likes')
+                ->where('media_type', $mediaType)
+                ->where('media_id', $mediaId)
+                ->orderBy('created_at')
+                ->get(),
+        );
 
         $likedIds = $this->likedCommentIds($viewer, $comments);
         $byParent = $comments->groupBy(fn (Comment $c) => $c->parent_id ?? 0);
@@ -63,7 +68,7 @@ class CommentService implements CommentServiceInterface
             $this->assertSameMedia($parent, $data['media_type'], (int) $data['media_id']);
         }
 
-        return Comment::create([
+        $comment = Comment::create([
             'user_id' => $user->id,
             'media_type' => $data['media_type'],
             'media_id' => $data['media_id'],
@@ -71,6 +76,10 @@ class CommentService implements CommentServiceInterface
             'body' => trim($data['body']),
             'is_spoiler' => (bool) ($data['is_spoiler'] ?? false),
         ])->load('user:id,name');
+
+        $this->bustCache($data['media_type'], (int) $data['media_id']);
+
+        return $comment;
     }
 
     public function update(User $user, Comment $comment, array $data): Comment
@@ -85,6 +94,8 @@ class CommentService implements CommentServiceInterface
             'edited_at' => now(),
         ]);
 
+        $this->bustCache($comment->media_type, (int) $comment->media_id);
+
         return $comment->fresh(['user:id,name']);
     }
 
@@ -93,6 +104,8 @@ class CommentService implements CommentServiceInterface
         if ($comment->user_id !== $user->id && ! $user->isAdmin()) {
             abort(403);
         }
+
+        $this->bustCache($comment->media_type, (int) $comment->media_id);
 
         $comment->delete();
     }
@@ -115,10 +128,14 @@ class CommentService implements CommentServiceInterface
             $liked = true;
         }
 
-        return [
+        $result = [
             'liked' => $liked,
             'likes_count' => $comment->likes()->count(),
         ];
+
+        $this->bustCache($comment->media_type, (int) $comment->media_id);
+
+        return $result;
     }
 
     /** @param  Collection<int|string, Collection<int, Comment>>  $byParent */
@@ -173,5 +190,15 @@ class CommentService implements CommentServiceInterface
                 'parent_id' => ['This reply does not belong to the same title.'],
             ]);
         }
+    }
+
+    private function cacheKey(string $mediaType, int $mediaId): string
+    {
+        return "comments.{$mediaType}.{$mediaId}";
+    }
+
+    private function bustCache(string $mediaType, int $mediaId): void
+    {
+        Cache::forget($this->cacheKey($mediaType, $mediaId));
     }
 }

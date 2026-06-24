@@ -7,7 +7,7 @@ use Illuminate\Support\Collection;
 
 interface ActorRepositoryInterface
 {
-    public function actors(?string $search, string $sort, int $perPage): LengthAwarePaginator;
+    public function actors(?string $search, string $sort, int $perPage, int $page = 1): LengthAwarePaginator;
 
     public function createRecord(?int $value, Collection $data): void;
 }

@@ -17,6 +17,7 @@ const year = new Date().getFullYear();
                 <p class="mt-3 text-xs text-muted/70">&copy; {{ year }} {{ site.name || 'Flexter' }}</p>
             </div>
             <nav class="flex flex-wrap gap-4 text-sm">
+                <Link :href="route('help')" class="text-muted transition hover:text-accent">Help</Link>
                 <Link :href="route('lists')" class="text-muted transition hover:text-accent">Curated lists</Link>
                 <Link :href="route('feedback')" class="text-muted transition hover:text-accent">Send feedback</Link>
             </nav>

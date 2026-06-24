@@ -5,6 +5,7 @@ namespace App\Repositories\HomeRepository;
 use App\Enums\Categories;
 use App\Movie\Models\Movie;
 use App\Repositories\Interfaces\HomeRepositoryInterface;
+use App\Shared\Support\AppCache;
 use App\Shared\Support\HomeCache;
 use App\Tv\Models\Tv;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -21,31 +22,37 @@ class HomeRepository implements HomeRepositoryInterface
 
     public function trendingMovies(int $limit = 8): EloquentCollection
     {
-        return Movie::query()
-            ->select(self::LIST_COLUMNS)
-            ->where('is_trending', true)
-            ->whereNotNull('backdrop_path')
-            ->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC')
-            ->limit($limit)
-            ->get();
+        return AppCache::catalogue(
+            "trending.movies.{$limit}",
+            fn () => Movie::query()
+                ->select(self::LIST_COLUMNS)
+                ->where('is_trending', true)
+                ->whereNotNull('backdrop_path')
+                ->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC')
+                ->limit($limit)
+                ->get(),
+        );
     }
 
     public function trendingTv(int $limit = 8): EloquentCollection
     {
-        return Tv::query()
-            ->select(self::LIST_COLUMNS)
-            ->where('is_trending', true)
-            ->whereNotNull('backdrop_path')
-            ->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC')
-            ->limit($limit)
-            ->get();
+        return AppCache::catalogue(
+            "trending.tv.{$limit}",
+            fn () => Tv::query()
+                ->select(self::LIST_COLUMNS)
+                ->where('is_trending', true)
+                ->whereNotNull('backdrop_path')
+                ->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC')
+                ->limit($limit)
+                ->get(),
+        );
     }
 
     public function movieRail(int $category, int $limit = 20): EloquentCollection
     {
         return Cache::remember(
             HomeCache::railKey('movie', $category, $limit),
-            now()->addMinutes(30),
+            config('flexter.cache.catalogue_ttl'),
             fn () => Movie::query()
                 ->select(self::LIST_COLUMNS)
                 ->where('category', $category)
@@ -59,7 +66,7 @@ class HomeRepository implements HomeRepositoryInterface
     {
         return Cache::remember(
             HomeCache::railKey('tv', $category, $limit),
-            now()->addMinutes(30),
+            config('flexter.cache.catalogue_ttl'),
             fn () => Tv::query()
                 ->select(self::LIST_COLUMNS)
                 ->where('category', $category)

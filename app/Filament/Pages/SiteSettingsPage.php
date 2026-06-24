@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Site\Data\SiteSettingsData;
+use App\Shared\Support\HomeCache;
 use App\Site\Services\Interfaces\SiteSettingsServiceInterface;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Section;
@@ -106,6 +107,38 @@ class SiteSettingsPage extends Page implements HasForms
                             ->minValue(1)
                             ->maxValue(SiteSettingsData::MAX_TMDB_PAGES),
                     ]),
+                Section::make('Home page')
+                    ->description('How many items appear in each section on the home page.')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('home_hero_limit')
+                            ->label('Hero carousel (trending)')
+                            ->numeric()
+                            ->required()
+                            ->minValue(3)
+                            ->maxValue(30)
+                            ->helperText('Trending movies & series slides in the hero.'),
+                        TextInput::make('home_recommendations_limit')
+                            ->label('Recommended for you')
+                            ->numeric()
+                            ->required()
+                            ->minValue(4)
+                            ->maxValue(48),
+                        TextInput::make('home_actor_feed_limit')
+                            ->label('From actors you follow')
+                            ->numeric()
+                            ->required()
+                            ->minValue(4)
+                            ->maxValue(36)
+                            ->helperText('Personalized suggestions from followed actors.'),
+                        TextInput::make('home_featured_lists_limit')
+                            ->label('Featured list cards')
+                            ->numeric()
+                            ->required()
+                            ->minValue(1)
+                            ->maxValue(12)
+                            ->helperText('How many curated list cards to show on the home page.'),
+                    ]),
                 Section::make('Features & limits')
                     ->columns(2)
                     ->schema([
@@ -157,6 +190,8 @@ class SiteSettingsPage extends Page implements HasForms
     public function save(SiteSettingsServiceInterface $siteSettings): void
     {
         $siteSettings->update($this->form->getState());
+
+        HomeCache::bust();
 
         Notification::make()
             ->success()
