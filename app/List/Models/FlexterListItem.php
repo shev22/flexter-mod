@@ -3,6 +3,7 @@
 namespace App\List\Models;
 
 use App\Movie\Models\Movie;
+use App\Shared\Support\AppCache;
 use App\Tv\Models\Tv;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,5 +28,13 @@ class FlexterListItem extends Model
             'tv' => Tv::query()->find($this->media_id),
             default => Movie::query()->find($this->media_id),
         };
+    }
+
+    protected static function booted(): void
+    {
+        $bust = fn () => AppCache::bustLists();
+
+        static::saved($bust);
+        static::deleted($bust);
     }
 }

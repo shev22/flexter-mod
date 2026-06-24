@@ -4,26 +4,39 @@ namespace App\Actor\Repositories;
 
 use App\Actor\Models\Actor;
 use App\Actor\Repositories\Interfaces\ActorRepositoryInterface;
+use App\Shared\Support\AppCache;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 class ActorRepository implements ActorRepositoryInterface
 {
-    public function actors(?string $search, string $sort, int $perPage): LengthAwarePaginator
+    public function actors(?string $search, string $sort, int $perPage, int $page = 1): LengthAwarePaginator
     {
-        $query = Actor::query()
-            ->when($search, fn ($q, $term) => $q->where(function ($inner) use ($term) {
-                $inner->where('name', 'like', "%{$term}%")
-                    ->orWhere('known_for', 'like', "%{$term}%");
-            }));
+        $key = md5(json_encode([
+            'search' => $search,
+            'sort' => $sort,
+            'perPage' => $perPage,
+            'page' => $page,
+        ], JSON_THROW_ON_ERROR));
 
-        if ($sort === 'name') {
-            $query->orderBy('name');
-        } else {
-            $query->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC');
-        }
+        return AppCache::catalogue(
+            'actors.'.$key,
+            function () use ($search, $sort, $perPage, $page) {
+                $query = Actor::query()
+                    ->when($search, fn ($q, $term) => $q->where(function ($inner) use ($term) {
+                        $inner->where('name', 'like', "%{$term}%")
+                            ->orWhere('known_for', 'like', "%{$term}%");
+                    }));
 
-        return $query->paginate($perPage)->withQueryString();
+                if ($sort === 'name') {
+                    $query->orderBy('name');
+                } else {
+                    $query->orderByRaw('CAST(popularity AS DECIMAL(12,3)) DESC');
+                }
+
+                return $query->paginate($perPage, ['*'], 'page', $page)->withQueryString();
+            },
+        );
     }
 
     public function createRecord(?int $value, Collection $data): void

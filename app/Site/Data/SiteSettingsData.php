@@ -31,6 +31,10 @@ final class SiteSettingsData implements Arrayable, JsonSerializable
         public bool $enableActorFeed,
         public bool $enablePublicLists,
         public string $heroPinnedIds,
+        public int $homeHeroLimit,
+        public int $homeRecommendationsLimit,
+        public int $homeActorFeedLimit,
+        public int $homeFeaturedListsLimit,
     ) {}
 
     public static function defaults(): self
@@ -57,6 +61,10 @@ final class SiteSettingsData implements Arrayable, JsonSerializable
             enableActorFeed: true,
             enablePublicLists: true,
             heroPinnedIds: '',
+            homeHeroLimit: 12,
+            homeRecommendationsLimit: 20,
+            homeActorFeedLimit: 10,
+            homeFeaturedListsLimit: 6,
         );
     }
 
@@ -89,6 +97,10 @@ final class SiteSettingsData implements Arrayable, JsonSerializable
             enableActorFeed: (bool) ($payload['enable_actor_feed'] ?? $defaults->enableActorFeed),
             enablePublicLists: (bool) ($payload['enable_public_lists'] ?? $defaults->enablePublicLists),
             heroPinnedIds: (string) ($payload['hero_pinned_ids'] ?? $defaults->heroPinnedIds),
+            homeHeroLimit: self::int($payload['home_hero_limit'] ?? null, $defaults->homeHeroLimit, 3, 30),
+            homeRecommendationsLimit: self::int($payload['home_recommendations_limit'] ?? null, $defaults->homeRecommendationsLimit, 4, 48),
+            homeActorFeedLimit: self::int($payload['home_actor_feed_limit'] ?? null, $defaults->homeActorFeedLimit, 4, 36),
+            homeFeaturedListsLimit: self::int($payload['home_featured_lists_limit'] ?? null, $defaults->homeFeaturedListsLimit, 1, 12),
         );
     }
 
@@ -135,6 +147,10 @@ final class SiteSettingsData implements Arrayable, JsonSerializable
             'enable_actor_feed' => $this->enableActorFeed,
             'enable_public_lists' => $this->enablePublicLists,
             'hero_pinned_ids' => $this->heroPinnedIds,
+            'home_hero_limit' => $this->homeHeroLimit,
+            'home_recommendations_limit' => $this->homeRecommendationsLimit,
+            'home_actor_feed_limit' => $this->homeActorFeedLimit,
+            'home_featured_lists_limit' => $this->homeFeaturedListsLimit,
         ];
     }
 

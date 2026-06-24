@@ -3,7 +3,28 @@
  * driven by the `data-accent` attribute (see app.css) and theme toggles the
  * `dark` class. Falls back to the OS preference when theme is "system".
  */
+import { applyFavicon } from './accentColors.js';
+
+const STORAGE_KEY = 'flexter.appearance';
+
 let systemThemeListener;
+
+function persistAppearance(settings) {
+    try {
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+                theme: settings?.theme ?? 'dark',
+                accent: settings?.accent ?? 'aurora',
+                density: settings?.density ?? 'comfortable',
+                high_contrast: !!settings?.high_contrast,
+                reduce_motion: !!settings?.reduce_motion,
+            }),
+        );
+    } catch {
+        // localStorage may be unavailable in private browsing.
+    }
+}
 
 export function applyAppearance(settings) {
     const root = document.documentElement;
@@ -34,6 +55,8 @@ export function applyAppearance(settings) {
     };
 
     applyThemeClass();
+    persistAppearance(settings);
+    applyFavicon(accent);
 
     if (systemThemeListener) {
         systemThemeListener.removeEventListener('change', applyThemeClass);

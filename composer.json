@@ -12,6 +12,7 @@
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9",
         "phpmailer/phpmailer": "^6.10",
+        "predis/predis": "^2.3",
         "spatie/laravel-permission": "^6.25",
         "tightenco/ziggy": "^2.5"
     },

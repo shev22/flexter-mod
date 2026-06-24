@@ -4,6 +4,7 @@ namespace App\Tv\Repositories;
 
 use App\Enums\Categories;
 use App\Shared\Data\MediaFilterData;
+use App\Shared\Support\AppCache;
 use App\Shared\Support\GenrePivotSync;
 use App\Shared\Support\MediaQuery;
 use App\Tv\Models\Tv;
@@ -20,9 +21,12 @@ class TvRepository implements TvRepositoryInterface
      */
     public function tv(MediaFilterData $filter): LengthAwarePaginator
     {
-        return MediaQuery::apply(Tv::query(), $filter)
-            ->paginate($filter->perPage)
-            ->withQueryString();
+        return AppCache::catalogue(
+            'tv.'.$filter->cacheKey(),
+            fn () => MediaQuery::apply(Tv::query(), $filter)
+                ->paginate($filter->perPage, ['*'], 'page', $filter->page)
+                ->withQueryString(),
+        );
     }
 
     /**

@@ -20,4 +20,14 @@ interface CommentServiceInterface
 
     /** @return array{liked: bool, likes_count: int} */
     public function toggleLike(User $user, Comment $comment): array;
+
+    public function flag(Comment $comment): void;
+
+    public function unflag(Comment $comment): void;
+
+    public function block(Comment $comment): void;
+
+    public function unblock(Comment $comment): void;
+
+    public function adminDelete(Comment $comment): void;
 }

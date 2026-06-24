@@ -59,6 +59,13 @@ class HandleInertiaRequests extends Middleware
                         'public_lists' => $settings->enablePublicLists,
                         'site_wide_autoplay' => $settings->siteWideAutoplay,
                     ],
+                    'playback' => [
+                        'enabled' => (bool) config('flexter.playback.enabled'),
+                        'provider' => (string) config('flexter.playback.provider'),
+                        'base_url' => (string) config('flexter.playback.base_url'),
+                        'url_style' => (string) config('flexter.playback.url_style'),
+                        'progress_mode' => (string) config('flexter.playback.progress_mode'),
+                    ],
                 ];
             },
         ]);

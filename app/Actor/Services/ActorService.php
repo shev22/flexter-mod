@@ -25,9 +25,9 @@ class ActorService implements ActorServiceInterface
         $this->actorRepository->createRecord( null, $actors);
     }
 
-    public function getActors(?string $search, string $sort, int $perPage): LengthAwarePaginator
+    public function getActors(?string $search, string $sort, int $perPage, int $page = 1): LengthAwarePaginator
     {
-        return $this->actorRepository->actors($search, $sort, $perPage);
+        return $this->actorRepository->actors($search, $sort, $perPage, $page);
     }
 
     /**

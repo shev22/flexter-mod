@@ -23,6 +23,7 @@ import RatingRing from '../ui/RatingRing.vue';
 import GenrePill from '../ui/GenrePill.vue';
 import TrailerBackground from './TrailerBackground.vue';
 import TrailerModal from './TrailerModal.vue';
+import MediaPlayer from './MediaPlayer.vue';
 import CommentSection from '../comments/CommentSection.vue';
 
 const props = defineProps({
@@ -39,6 +40,7 @@ const page = usePage();
 const { toggle } = useWatchlist();
 const { bump, markWatched } = useWatchHistory();
 const { add: addTonight, has: inTonightQueue } = useTonightQueue();
+const showPlayer = ref(false);
 const showTrailer = ref(false);
 const modalEmbedSrc = ref(null);
 const heroHover = ref(false);
@@ -69,6 +71,21 @@ watch(
     },
 );
 
+watch(
+    () => [props.media.type, props.media.id],
+    () => {
+        progress.value = props.watchProgress ?? 0;
+        selectedSeason.value = props.watchContext?.season ?? props.media.seasons?.[0]?.season ?? 1;
+        selectedEpisode.value = props.watchContext?.episode ?? 1;
+        overviewRevealed.value = false;
+        showPlayer.value = false;
+        showTrailer.value = false;
+        modalEmbedSrc.value = null;
+        heroHover.value = false;
+        showMiniHeader.value = false;
+    },
+);
+
 function castHref(member) {
     return route('actor.show', { slug: slugify(member.name), id: member.id });
 }
@@ -79,16 +96,36 @@ function historyPayload() {
 }
 
 function openPlayer() {
-    if (props.media.trailer) {
-        modalEmbedSrc.value = trailerModalEmbedUrl(props.media.trailer, page.props.settings);
-    } else {
-        modalEmbedSrc.value = null;
-    }
-    showTrailer.value = true;
+    showPlayer.value = true;
 }
 
 function playTrailer() {
-    openPlayer();
+    if (!props.media.trailer) {
+        return;
+    }
+
+    modalEmbedSrc.value = trailerModalEmbedUrl(props.media.trailer, page.props.settings);
+    showTrailer.value = true;
+}
+
+function onPlayerProgress({ progress: percent, season, episode }) {
+    if (percent <= 0) {
+        return;
+    }
+
+    if (season != null) {
+        selectedSeason.value = season;
+    }
+
+    if (episode != null) {
+        selectedEpisode.value = episode;
+    }
+
+    progress.value = Math.max(progress.value, Math.min(100, percent));
+}
+
+function closePlayer() {
+    showPlayer.value = false;
 }
 
 function onTrailerProgress(percent) {
@@ -320,7 +357,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
                                 @click="addToTonight"
                             >
                                 <MoonIcon class="h-3.5 w-3.5" />
-                                {{ tonightAdded ? 'Queued' : 'Tonight' }}
+                                {{ tonightAdded ? 'In tonight\'s queue' : 'Add to tonight\'s queue' }}
                             </button>
                             <button
                                 v-if="watchProgress !== null"
@@ -367,6 +404,20 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
             </Rail>
             </div>
         </div>
+
+        <MediaPlayer
+            v-if="showPlayer"
+            :type="media.type"
+            :id="media.id"
+            :title="media.title"
+            :poster="media.poster"
+            :runtime="media.runtime"
+            :season="selectedSeason"
+            :episode="selectedEpisode"
+            :initial-progress="progress"
+            @close="closePlayer"
+            @progress="onPlayerProgress"
+        />
 
         <TrailerModal
             v-if="showTrailer"
