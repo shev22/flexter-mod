@@ -1,35 +1,40 @@
 import './bootstrap';
-import '../css/app.css'
+import '../css/app.css';
 
-import { createApp, h } from 'vue'
-import { createInertiaApp } from '@inertiajs/vue3'
-import Layout from "./Layouts/Layout.vue";
-import { ZiggyVue } from "../../vendor/tightenco/ziggy/dist/";
-import {route} from "ziggy-js";
-import {Ziggy} from "./ziggy.js";
-import {setThemeOnLoad} from "./theme.js";
+import { createApp, h } from 'vue';
+import { createInertiaApp } from '@inertiajs/vue3';
+import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/';
+import AppLayout from './Layouts/AppLayout.vue';
+import { applyAppearance } from './lib/appearance.js';
 
+const pages = import.meta.glob('./Pages/**/*.vue');
 
 createInertiaApp({
-    title: (title) => `Flexter ${title}`,
-    resolve: name => {
-        const pages = import.meta.glob('./Pages/**/*.vue', { eager: true })
-        let page = pages[`./Pages/${name}.vue`]
-        page.default.layout = page.default.layout || Layout
+    title: (title) => (title ? `${title} · Flexter` : 'Flexter'),
+    resolve: async (name) => {
+        const loader = pages[`./Pages/${name}.vue`];
+        if (!loader) {
+            throw new Error(`Unknown page: ${name}`);
+        }
+        const module = await loader();
+        module.default.layout = module.default.layout || AppLayout;
 
-        return page
+        return module;
     },
     setup({ el, App, props, plugin }) {
+        applyAppearance(props.initialPage.props.settings);
+
         createApp({ render: () => h(App, props) })
             .use(plugin)
-            .use(ZiggyVue, Ziggy)
-            .mount(el)
+            .use(ZiggyVue)
+            .mount(el);
     },
-    progress:{
-        color: "green",
-        includeCSS: true,
-        showSpinner: false
-    }
-}).then((r) => {});
+    progress: {
+        color: 'rgb(168 85 247)',
+        showSpinner: false,
+    },
+});
 
-setThemeOnLoad()
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}

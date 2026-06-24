@@ -4,7 +4,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Third Party Services
+    | Third Party Interfaces
     |--------------------------------------------------------------------------
     |
     | This file is for storing the credentials for third party services such
@@ -36,5 +36,6 @@ return [
     ],
     'tmdb' => [
         'token' => env('TMDB_TOKEN'),
+        'base_url' => env('TMDB_BASE_URL'),
         ]
 ];

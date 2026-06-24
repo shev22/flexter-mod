@@ -17,6 +17,16 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vue: ['vue', '@inertiajs/vue3'],
+                    icons: ['@heroicons/vue/24/solid', '@heroicons/vue/24/outline'],
+                },
+            },
+        },
+    },
     resolve: {
         alias: {
             ziggy: '/vendor/tightenco/ziggy/dist',
@@ -29,8 +39,8 @@ export default defineConfig({
             host: 'localhost',
         },
         watch: {
-            usePolling: true
+            usePolling: true,
         },
-        cors: true
-    }
+        cors: true,
+    },
 });
