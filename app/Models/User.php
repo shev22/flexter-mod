@@ -2,10 +2,36 @@
 
 namespace App\Models;
 
+use App\Enums\Role;
+use App\Settings\Models\UserSetting;
+use App\WatchHistory\Models\WatchHistory;
+use App\WatchList\Models\WatchList;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+/**
+ * @mixin IdeHelperUser
+ */
+class User extends Authenticatable implements FilamentUser
 {
+    use HasFactory;
+    use HasRoles;
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->isAdmin();
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(Role::Admin->value);
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -38,5 +64,20 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function watchlist(): HasMany
+    {
+        return $this->hasMany(WatchList::class);
+    }
+
+    public function settings(): HasOne
+    {
+        return $this->hasOne(UserSetting::class);
+    }
+
+    public function watchHistories(): HasMany
+    {
+        return $this->hasMany(WatchHistory::class);
     }
 }

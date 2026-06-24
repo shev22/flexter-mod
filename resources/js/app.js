@@ -1,18 +1,40 @@
 import './bootstrap';
-import '../css/app.css'
+import '../css/app.css';
 
-import { createApp, h } from 'vue'
-import { createInertiaApp } from '@inertiajs/vue3'
+import { createApp, h } from 'vue';
+import { createInertiaApp } from '@inertiajs/vue3';
+import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/';
+import AppLayout from './Layouts/AppLayout.vue';
+import { applyAppearance } from './lib/appearance.js';
+
+const pages = import.meta.glob('./Pages/**/*.vue');
 
 createInertiaApp({
-    resolve: name => {
-        const pages = import.meta.glob('./Pages/**/*.vue', { eager: true })
-        return pages[`./Pages/${name}.vue`]
+    title: (title) => (title ? `${title} · Flexter` : 'Flexter'),
+    resolve: async (name) => {
+        const loader = pages[`./Pages/${name}.vue`];
+        if (!loader) {
+            throw new Error(`Unknown page: ${name}`);
+        }
+        const module = await loader();
+        module.default.layout = module.default.layout || AppLayout;
+
+        return module;
     },
     setup({ el, App, props, plugin }) {
+        applyAppearance(props.initialPage.props.settings);
+
         createApp({ render: () => h(App, props) })
             .use(plugin)
-            .mount(el)
+            .use(ZiggyVue)
+            .mount(el);
     },
-}).then((r) => {});
+    progress: {
+        color: 'rgb(168 85 247)',
+        showSpinner: false,
+    },
+});
 
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
