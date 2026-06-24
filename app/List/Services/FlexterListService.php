@@ -6,6 +6,7 @@ use App\List\Models\FlexterList;
 use App\List\Support\ListIcons;
 use App\Movie\Models\Movie;
 use App\Shared\Data\MediaCardData;
+use App\Shared\Support\AppCache;
 use App\Shared\Support\Watchlist;
 use App\Tv\Models\Tv;
 
@@ -16,13 +17,16 @@ class FlexterListService
      */
     public function featured(int $limit = 6): array
     {
-        $lists = FlexterList::query()
-            ->where('is_featured', true)
-            ->withCount('items')
-            ->orderBy('sort_order')
-            ->limit($limit)
-            ->with(['items' => fn ($q) => $q->orderBy('sort_order')])
-            ->get();
+        $lists = AppCache::lists(
+            "featured.{$limit}",
+            fn () => FlexterList::query()
+                ->where('is_featured', true)
+                ->withCount('items')
+                ->orderBy('sort_order')
+                ->limit($limit)
+                ->with(['items' => fn ($q) => $q->orderBy('sort_order')])
+                ->get(),
+        );
 
         return $lists
             ->map(fn (FlexterList $list) => $this->presentList($list, $list->items, (int) $list->items_count))
@@ -34,10 +38,15 @@ class FlexterListService
      */
     public function allLists(): array
     {
-        return FlexterList::query()
-            ->withCount('items')
-            ->orderBy('sort_order')
-            ->get()
+        $lists = AppCache::lists(
+            'index',
+            fn () => FlexterList::query()
+                ->withCount('items')
+                ->orderBy('sort_order')
+                ->get(),
+        );
+
+        return $lists
             ->map(fn (FlexterList $list) => [
                 'id' => $list->id,
                 'title' => $list->title,
@@ -54,13 +63,18 @@ class FlexterListService
      */
     public function show(string $slug): ?array
     {
-        $list = FlexterList::query()
-            ->where('slug', $slug)
-            ->withCount('items')
-            ->with(['items' => fn ($q) => $q->orderBy('sort_order')])
-            ->first();
+        $list = AppCache::lists(
+            "show.{$slug}",
+            fn () => FlexterList::query()
+                ->where('slug', $slug)
+                ->withCount('items')
+                ->with(['items' => fn ($q) => $q->orderBy('sort_order')])
+                ->first(),
+        );
 
-        return $list ? $this->presentList($list, $list->items, (int) $list->items_count) : null;
+        return $list instanceof FlexterList
+            ? $this->presentList($list, $list->items, (int) $list->items_count)
+            : null;
     }
 
     /**

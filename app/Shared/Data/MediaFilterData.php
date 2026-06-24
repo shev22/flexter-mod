@@ -27,6 +27,7 @@ final class MediaFilterData implements Arrayable, JsonSerializable
         public array $years = [],
         public array $ratings = [],
         public int $perPage = 24,
+        public int $page = 1,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -41,7 +42,21 @@ final class MediaFilterData implements Arrayable, JsonSerializable
             years: self::intList($request->query('year')),
             ratings: self::intList($request->query('rating')),
             perPage: $perPage,
+            page: max(1, (int) $request->query('page', 1)),
         );
+    }
+
+    public function cacheKey(): string
+    {
+        return md5(json_encode([
+            'search' => $this->search,
+            'genres' => $this->genres,
+            'sort' => $this->sort,
+            'years' => $this->years,
+            'ratings' => $this->ratings,
+            'perPage' => $this->perPage,
+            'page' => $this->page,
+        ], JSON_THROW_ON_ERROR));
     }
 
     /**

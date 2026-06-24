@@ -12,5 +12,10 @@ defineProps({
 </script>
 
 <template>
-    <MediaDetail :media="media" :watch-progress="watchProgress" :comments="comments" />
+    <MediaDetail
+        :key="`${media.type}-${media.id}`"
+        :media="media"
+        :watch-progress="watchProgress"
+        :comments="comments"
+    />
 </template>

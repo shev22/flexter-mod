@@ -38,27 +38,30 @@ class HomeService implements HomeServiceInterface
         $key = HomeCache::pageKey($user?->id);
         $settings = $this->siteSettings->get();
 
-        // Enrich outside the page cache so hero trailers/logos stay current even
-        // when the rest of the home payload is served from cache.
-        $hero = $this->homeRepository->trendingMovies()
-            ->merge($this->homeRepository->trendingTv());
+        $heroLimit = $settings->homeHeroLimit;
 
-        // Resolve trailers/logos from cache + up to 8 TMDB detail calls per request.
-        $this->enricher->enrichMany($hero, 8);
+        $hero = collect($this->homeRepository->trendingMovies($heroLimit))
+            ->merge($this->homeRepository->trendingTv($heroLimit))
+            ->sortByDesc(fn ($item) => (float) $item->popularity)
+            ->take($heroLimit)
+            ->values();
+
+        // Resolve trailers/logos from cache + TMDB detail calls for hero slides.
+        $this->enricher->enrichMany($hero, min($heroLimit, 12));
 
         $heroItems = Present::heroList($this->prioritizeHero($hero, $settings->heroPinnedIds));
 
-        $payload = Cache::remember($key, now()->addMinutes(10), function () use ($user, $settings) {
+        $payload = Cache::remember($key, config('flexter.cache.home_ttl'), function () use ($user, $settings) {
             return [
                 'hero' => [],
                 'continueWatching' => $user
                     ? $this->watchHistoryService->continueWatching($user)
                     : [],
                 'recommendations' => $settings->enableRecommendations
-                    ? $this->recommendations->forUser($user, RecommendationService::POOL_SIZE)
+                    ? $this->recommendations->forUser($user, $settings->homeRecommendationsLimit)
                     : [],
                 'actorFeed' => $settings->enableActorFeed
-                    ? $this->actorFeed->forUser($user, ActorFeedService::POOL_SIZE)
+                    ? $this->actorFeed->forUser($user, $settings->homeActorFeedLimit)
                     : [],
                 'movieRails' => [
                     $this->rail('In Theaters', $this->homeRepository->movieRail(Categories::NOW_PLAYING->value)),
@@ -77,7 +80,7 @@ class HomeService implements HomeServiceInterface
 
         $payload['hero'] = $heroItems;
         $payload['featuredLists'] = $settings->enablePublicLists
-            ? $this->lists->featured()
+            ? $this->lists->featured($settings->homeFeaturedListsLimit)
             : [];
 
         return $payload;

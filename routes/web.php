@@ -40,6 +40,8 @@ Route::post('feedback', [FeedbackController::class, 'store'])
     ->middleware('throttle:feedback')
     ->name('feedback.store');
 
+Route::inertia('help', 'Main/Help')->name('help');
+
 Route::get('lists', [FlexterListController::class, 'index'])->name('lists');
 Route::get('lists/{slug}', [FlexterListController::class, 'show'])->name('lists.show');
 

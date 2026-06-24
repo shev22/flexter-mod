@@ -13,6 +13,7 @@ import {
     XMarkIcon,
     QueueListIcon,
     ChartBarIcon,
+    QuestionMarkCircleIcon,
 } from '@heroicons/vue/24/outline';
 
 defineProps({
@@ -119,6 +120,15 @@ function isActive(item) {
             </template>
 
             <div class="mt-auto space-y-3">
+                <Link
+                    :href="route('help')"
+                    class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition"
+                    :class="route().current('help') ? 'bg-aurora-soft text-accent' : 'text-muted hover:bg-hair/5 hover:text-ink'"
+                    @click="emit('close')"
+                >
+                    <QuestionMarkCircleIcon class="h-5 w-5 shrink-0" />
+                    Help
+                </Link>
                 <Link
                     :href="route('feedback')"
                     class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted transition hover:bg-hair/5 hover:text-ink"
