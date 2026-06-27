@@ -32,4 +32,9 @@ interface WatchHistoryServiceInterface
     public function latestProgressFor(User $user, string $type, int $mediaId): ?WatchHistory;
 
     public function progressForEpisode(User $user, string $type, int $mediaId, int $season, int $episode): ?WatchHistory;
+
+    /**
+     * @param  array<int, array<string, mixed>>  $entries
+     */
+    public function mergeGuestEntries(User $user, array $entries): int;
 }

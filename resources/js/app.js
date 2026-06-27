@@ -6,6 +6,7 @@ import { createInertiaApp, router } from '@inertiajs/vue3';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/';
 import AppLayout from './Layouts/AppLayout.vue';
 import { applyAppearance } from './lib/appearance.js';
+import { clearGuestPayload } from './lib/guestMerge.js';
 
 const pages = import.meta.glob('./Pages/**/*.vue');
 
@@ -37,6 +38,10 @@ createInertiaApp({
 
 router.on('success', (event) => {
     applyAppearance(event.detail.page.props.settings);
+
+    if (event.detail.page.props.auth?.user) {
+        clearGuestPayload();
+    }
 });
 
 router.on('invalid', () => {

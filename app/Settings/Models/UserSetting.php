@@ -22,6 +22,7 @@ class UserSetting extends Model
         'email_notifications',
         'spoiler_free',
         'favorite_genre_ids',
+        'tonight_queue_started_at',
     ];
 
     protected $casts = [
@@ -33,6 +34,7 @@ class UserSetting extends Model
         'email_notifications' => 'boolean',
         'spoiler_free' => 'boolean',
         'favorite_genre_ids' => 'array',
+        'tonight_queue_started_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

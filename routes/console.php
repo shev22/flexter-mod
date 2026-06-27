@@ -10,3 +10,5 @@ Artisan::command('inspire', function () {
 
 // Keep the home carousel fresh: re-sync trending status against TMDB daily.
 Schedule::command('flexter:trending')->dailyAt('05:00')->withoutOverlapping();
+
+Schedule::command('flexter:send-weekly-digest')->weeklyOn(1, '09:00')->withoutOverlapping();

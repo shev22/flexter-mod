@@ -6,6 +6,7 @@ import Navbar from '../Components/layout/Navbar.vue';
 import AppFooter from '../Components/layout/AppFooter.vue';
 import MobileTabBar from '../Components/layout/MobileTabBar.vue';
 import KeyboardHelpModal from '../Components/layout/KeyboardHelpModal.vue';
+import PwaInstallPrompt from '../Components/layout/PwaInstallPrompt.vue';
 import { applyAppearance } from '../lib/appearance.js';
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts.js';
 
@@ -92,6 +93,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
         <MobileTabBar @open-search="searchOpen = true" />
         <SearchOverlay v-if="searchOpen" @close="searchOpen = false" />
         <KeyboardHelpModal :open="helpOpen" @close="helpOpen = false" />
+        <PwaInstallPrompt />
 
         <Transition
             enter-active-class="transition duration-300"

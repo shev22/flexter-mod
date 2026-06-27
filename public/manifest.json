@@ -3,16 +3,24 @@
     "short_name": "Flexter",
     "description": "Discover movies, series, and your next watch.",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
     "background_color": "#0a0a0f",
     "theme_color": "#9333ea",
     "orientation": "portrait-primary",
+    "categories": ["entertainment", "video"],
     "icons": [
         {
             "src": "/favicon.svg",
             "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "any"
+        },
+        {
+            "src": "/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "maskable"
         }
     ]
 }

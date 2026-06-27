@@ -171,6 +171,37 @@ class WatchHistoryService implements WatchHistoryServiceInterface
             ->first();
     }
 
+    public function mergeGuestEntries(User $user, array $entries): int
+    {
+        $merged = 0;
+
+        foreach ($entries as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $type = (string) ($entry['type'] ?? '');
+            $mediaId = (int) ($entry['id'] ?? 0);
+            $progress = (int) ($entry['progress'] ?? 0);
+
+            if (! in_array($type, ['movie', 'tv'], true) || $mediaId <= 0 || $progress <= 0) {
+                continue;
+            }
+
+            $season = isset($entry['season']) && $entry['season'] !== null
+                ? (int) $entry['season']
+                : null;
+            $episode = isset($entry['episode']) && $entry['episode'] !== null
+                ? (int) $entry['episode']
+                : null;
+
+            $this->bumpProgress($user, $type, $mediaId, $progress, $season, $episode);
+            $merged++;
+        }
+
+        return $merged;
+    }
+
     private function upsert(
         User $user,
         string $type,

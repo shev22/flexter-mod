@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'stripe/webhook',
         ]);
 
+        $middleware->web(prepend: [
+            \App\Http\Middleware\EnsureSiteAvailable::class,
+        ]);
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
         ]);
