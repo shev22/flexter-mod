@@ -19,11 +19,17 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
  */
 class Movie extends Model
 {
+    protected $casts = [
+        'adult' => 'boolean',
+    ];
+
     protected $fillable =
         [
             'backdrop_path',
             'logo',
             'category',
+            'adult',
+            'certification',
             'genre_ids',
             'original_language',
             'overview',

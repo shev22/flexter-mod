@@ -47,7 +47,8 @@ class TvRepository implements TvRepositoryInterface
     {
         $tvIds = collect($data)->pluck('id')->toArray();
 
-        $tvs = collect($data)->map(fn($tv) => [
+        $tvs = collect($data)
+            ->map(fn ($tv) => [
             'id' => $tv['id'],
             'title' => $tv['name'] ?? $tv['title'] ?? null,
             'logo' => $tv['logo'] ?? null,
@@ -62,6 +63,8 @@ class TvRepository implements TvRepositoryInterface
             'original_language' => $tv['original_language'],
             'popularity' => $tv['popularity'],
             'is_trending' => $tv['is_trending'] ?? false,
+            'adult' => (bool) ($tv['adult'] ?? false),
+            'certification' => $tv['certification'] ?? null,
             'category' => $category,
             'created_at' => now(),
             'updated_at' => now(),
@@ -71,7 +74,7 @@ class TvRepository implements TvRepositoryInterface
         Tv::upsert($tvs, ['id'], [
             'title', 'poster_path', 'backdrop_path', 'overview', 'release_date',
             'vote_average', 'vote_count', 'original_language', 'is_trending', 'popularity',
-            'category', 'genre_ids', 'updated_at',
+            'category', 'genre_ids', 'adult', 'certification', 'updated_at',
         ]);
 
         $insertedTvs = Tv::whereIn('id', $tvIds)->get();

@@ -14,14 +14,21 @@ use App\Settings\Services\Interfaces\SettingsServiceInterface;
 use App\Settings\Services\SettingsService;
 use App\Site\Services\Interfaces\SiteSettingsServiceInterface;
 use App\Site\Services\SiteSettingsService;
+use App\Billing\Services\BillingService;
+use App\Billing\Services\Interfaces\BillingServiceInterface;
 use App\Comment\Services\CommentService;
 use App\Comment\Services\Interfaces\CommentServiceInterface;
+use App\TonightQueue\Services\Interfaces\TonightQueueServiceInterface;
+use App\TonightQueue\Services\TonightQueueService;
 use App\WatchHistory\Services\Interfaces\WatchHistoryServiceInterface;
 use App\WatchHistory\Services\WatchHistoryService;
 use App\WatchList\Services\Interfaces\WatchListServiceInterface;
 use App\WatchList\Services\WatchListServices;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -38,6 +45,8 @@ class AppServiceProvider extends ServiceProvider
         SiteSettingsServiceInterface::class => SiteSettingsService::class,
         WatchHistoryServiceInterface::class => WatchHistoryService::class,
         CommentServiceInterface::class => CommentService::class,
+        BillingServiceInterface::class => BillingService::class,
+        TonightQueueServiceInterface::class => TonightQueueService::class,
     ];
 
     /**
@@ -53,6 +62,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Event::listen(Registered::class, SendEmailVerificationNotification::class);
+
         RateLimiter::for('search', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
         RateLimiter::for('feedback', fn (Request $request) => Limit::perMinute(3)->by($request->ip()));
         RateLimiter::for('history', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip()));

@@ -5,6 +5,7 @@ namespace App\Services\MediaService;
 use App\Enums\MediaType;
 use App\Models\TmdbApiActivity;
 use App\Services\MediaService\Interfaces\MediaApiClientInterface;
+use App\Shared\Support\AdultContent;
 use App\Site\Services\Interfaces\SiteSettingsServiceInterface;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\Utils;
@@ -35,6 +36,7 @@ class ApiClient implements MediaApiClientInterface
                     ->async()
                     ->get("https://api.themoviedb.org/3/{$mediaType}/{$category}", [
                         'page' => $i,
+                        'include_adult' => true,
                     ]);
             }
 
@@ -117,11 +119,19 @@ class ApiClient implements MediaApiClientInterface
             return [];
         }
 
-        $movieAttachments = $withAttachments ? '?append_to_response=videos,credits,images' : '';
+        $movieAttachments = match ($mediaType) {
+            MediaType::MOVIE->getLabel() => '?append_to_response=videos,credits,images,release_dates',
+            MediaType::TV->getLabel() => '?append_to_response=videos,credits,images,content_ratings',
+            default => $withAttachments ? '?append_to_response=videos,credits,images' : '',
+        };
         $personAttachments = $withPersonAttachments ? '?append_to_response=external_ids,tv_credits,movie_credits,images' : '';
 
+        $attachments = $withPersonAttachments
+            ? $personAttachments
+            : $movieAttachments;
+
         $response = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/'.$mediaType.'/'.$mediaId.$movieAttachments.$personAttachments);
+            ->get('https://api.themoviedb.org/3/'.$mediaType.'/'.$mediaId.$attachments);
 
         if ($response->failed()) {
             $this->activityLogger->log(
@@ -174,7 +184,8 @@ class ApiClient implements MediaApiClientInterface
         }
 
         $data = $response->json();
-        $items = count($data['results'] ?? []);
+        $data['results'] = collect($data['results'] ?? [])->values()->all();
+        $items = count($data['results']);
 
         $this->activityLogger->log(
             operation: 'fetch_related',
@@ -276,14 +287,15 @@ class ApiClient implements MediaApiClientInterface
     public function search(string $query, bool $isMultipageSearch = false): Collection
     {
         $settings = $this->siteSettings->get();
-        $baseUrl = 'https://api.themoviedb.org/3/search/multi?query='.urlencode($query).'&include_adult=true';
+        $includeAdult = AdultContent::includeInApi();
+        $baseUrl = 'https://api.themoviedb.org/3/search/multi?query='.urlencode($query).'&include_adult='.($includeAdult ? 'true' : 'false');
         $lastPage = $isMultipageSearch
             ? $settings->searchFullPages
             : $settings->searchAutocompletePages;
 
-        $cacheKey = 'search.'.md5($query.'.'.($isMultipageSearch ? 'full' : 'auto').".{$lastPage}");
+        $cacheKey = 'search.'.md5($query.'.'.($isMultipageSearch ? 'full' : 'auto').".{$lastPage}.".($includeAdult ? '1' : '0'));
 
-        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($query, $baseUrl, $lastPage, $isMultipageSearch) {
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($query, $baseUrl, $lastPage, $isMultipageSearch, $includeAdult) {
             if ($this->isOverDailyLimit()) {
                 return collect([]);
             }
@@ -298,8 +310,13 @@ class ApiClient implements MediaApiClientInterface
 
             $results = collect($responses)
                 ->filter(fn ($response) => $response->successful())
-                ->flatMap(fn ($response) => $response->json()['results'] ?? [])
-                ->values();
+                ->flatMap(fn ($response) => $response->json()['results'] ?? []);
+
+            if (! $includeAdult) {
+                $results = $results->reject(fn (array $item) => in_array($item['media_type'] ?? '', ['movie', 'tv'], true) && (bool) ($item['adult'] ?? false));
+            }
+
+            $results = $results->values();
 
             $failedCount = collect($responses)->filter(fn ($response) => $response->failed())->count();
 

@@ -25,6 +25,10 @@ import TrailerBackground from './TrailerBackground.vue';
 import TrailerModal from './TrailerModal.vue';
 import MediaPlayer from './MediaPlayer.vue';
 import CommentSection from '../comments/CommentSection.vue';
+import SubscribePrompt from '../billing/SubscribePrompt.vue';
+import { useBilling } from '../../lib/useBilling.js';
+
+const FINISHED_THRESHOLD = 95;
 
 const props = defineProps({
     media: { type: Object, required: true },
@@ -39,8 +43,11 @@ const props = defineProps({
 const page = usePage();
 const { toggle } = useWatchlist();
 const { bump, markWatched } = useWatchHistory();
-const { add: addTonight, has: inTonightQueue } = useTonightQueue();
+const { toggle: toggleTonight, queue } = useTonightQueue();
+const { canPlay } = useBilling();
 const showPlayer = ref(false);
+const playerStartProgress = ref(0);
+const showSubscribePrompt = ref(false);
 const showTrailer = ref(false);
 const modalEmbedSrc = ref(null);
 const heroHover = ref(false);
@@ -61,7 +68,33 @@ const episodeOptions = computed(() => {
     const count = season?.episodes ?? 1;
     return Array.from({ length: count }, (_, i) => i + 1);
 });
-const tonightAdded = computed(() => inTonightQueue(props.media.type, props.media.id));
+const tonightAdded = computed(() =>
+    queue.value.some(
+        (entry) => entry.type === props.media.type && String(entry.id) === String(props.media.id),
+    ),
+);
+
+const isInProgress = computed(
+    () => props.watchProgress !== null && progress.value > 0 && progress.value < FINISHED_THRESHOLD,
+);
+
+const playButtonLabel = computed(() => {
+    if (isInProgress.value) {
+        if (props.media.type === 'tv') {
+            return `Continue · S${selectedSeason.value} E${selectedEpisode.value}`;
+        }
+
+        return 'Continue watching';
+    }
+
+    if (progress.value >= FINISHED_THRESHOLD) {
+        return 'Watch again';
+    }
+
+    return 'Watch now';
+});
+
+const miniPlayLabel = computed(() => (isInProgress.value ? 'Continue' : 'Watch'));
 
 watch(
     () => props.watchContext,
@@ -80,6 +113,7 @@ watch(
         overviewRevealed.value = false;
         showPlayer.value = false;
         showTrailer.value = false;
+        showSubscribePrompt.value = false;
         modalEmbedSrc.value = null;
         heroHover.value = false;
         showMiniHeader.value = false;
@@ -96,6 +130,18 @@ function historyPayload() {
 }
 
 function openPlayer() {
+    if (!canPlay.value) {
+        showSubscribePrompt.value = true;
+        return;
+    }
+
+    if (progress.value >= FINISHED_THRESHOLD) {
+        playerStartProgress.value = 0;
+        progress.value = 0;
+    } else {
+        playerStartProgress.value = progress.value;
+    }
+
     showPlayer.value = true;
 }
 
@@ -121,7 +167,7 @@ function onPlayerProgress({ progress: percent, season, episode }) {
         selectedEpisode.value = episode;
     }
 
-    progress.value = Math.max(progress.value, Math.min(100, percent));
+    progress.value = Math.min(100, Math.max(0, percent));
 }
 
 function closePlayer() {
@@ -157,8 +203,8 @@ function markAsWatched() {
     );
 }
 
-function addToTonight() {
-    addTonight({
+function toggleTonightQueue() {
+    toggleTonight({
         type: props.media.type,
         id: props.media.id,
         title: props.media.title,
@@ -202,7 +248,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
                         class="btn-play inline-flex shrink-0 items-center gap-1 px-3 py-1.5 text-xs"
                         @click="openPlayer"
                     >
-                        <PlayIcon class="h-3.5 w-3.5" /> Watch
+                        <PlayIcon class="h-3.5 w-3.5" /> {{ miniPlayLabel }}
                     </button>
                     <button type="button" class="rounded-full glass-strong p-2 text-ink" @click="toggle(media)">
                         <CheckIcon v-if="media.in_watchlist" class="h-5 w-5 text-accent2" />
@@ -331,7 +377,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
                                 class="btn-play inline-flex shrink-0 items-center gap-1.5 px-3.5 py-1.5 text-xs"
                                 @click="openPlayer"
                             >
-                                <PlayIcon class="h-3.5 w-3.5" /> Watch now
+                                <PlayIcon class="h-3.5 w-3.5" /> {{ playButtonLabel }}
                             </button>
                             <button
                                 v-if="media.trailer"
@@ -354,7 +400,8 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
                                 type="button"
                                 class="cinema-btn shrink-0 gap-1.5 px-3.5 py-1.5 text-xs"
                                 :class="tonightAdded ? '!border-accent2/50 !bg-accent2/20' : ''"
-                                @click="addToTonight"
+                                :aria-label="tonightAdded ? 'Remove from tonight\'s queue' : 'Add to tonight\'s queue'"
+                                @click="toggleTonightQueue"
                             >
                                 <MoonIcon class="h-3.5 w-3.5" />
                                 {{ tonightAdded ? 'In tonight\'s queue' : 'Add to tonight\'s queue' }}
@@ -414,7 +461,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
             :runtime="media.runtime"
             :season="selectedSeason"
             :episode="selectedEpisode"
-            :initial-progress="progress"
+            :initial-progress="playerStartProgress"
             @close="closePlayer"
             @progress="onPlayerProgress"
         />
@@ -428,5 +475,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
             @close="closeTrailer"
             @progress="onTrailerProgress"
         />
+
+        <SubscribePrompt :open="showSubscribePrompt" @close="showSubscribePrompt = false" />
     </article>
 </template>

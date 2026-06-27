@@ -1,8 +1,12 @@
 <?php
 
 use App\Actor\Http\Controllers\ActorsController;
+use App\Billing\Http\Controllers\BillingController;
+use App\Billing\Http\Controllers\StripeWebhookController;
 use App\Comment\Http\Controllers\CommentController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Feedback\FeedbackController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Search\SearchController;
@@ -10,6 +14,7 @@ use App\List\Http\Controllers\FlexterListController;
 use App\Movie\Http\Controllers\MovieController;
 use App\Settings\Http\Controllers\SettingsController;
 use App\Stats\Http\Controllers\StatsController;
+use App\TonightQueue\Http\Controllers\TonightQueueController;
 use App\Tv\Http\Controllers\TvController;
 use App\WatchHistory\Http\Controllers\WatchHistoryController;
 use App\WatchList\Http\Controllers\WatchListBulkController;
@@ -42,8 +47,13 @@ Route::post('feedback', [FeedbackController::class, 'store'])
 
 Route::inertia('help', 'Main/Help')->name('help');
 
+Route::post('stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
+    ->name('cashier.webhook');
+
 Route::get('lists', [FlexterListController::class, 'index'])->name('lists');
 Route::get('lists/{slug}', [FlexterListController::class, 'show'])->name('lists.show');
+
+Route::get('subscribe', [BillingController::class, 'subscribe'])->name('billing.subscribe');
 
 /*
 | Guest authentication
@@ -53,6 +63,11 @@ Route::middleware('guest')->group(function () {
     Route::inertia('register', 'Auth/Register')->name('register');
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
+
+    Route::get('forgot-password', [PasswordResetController::class, 'requestForm'])->name('password.request');
+    Route::post('forgot-password', [PasswordResetController::class, 'sendLink'])->name('password.email');
+    Route::get('reset-password/{token}', [PasswordResetController::class, 'resetForm'])->name('password.reset');
+    Route::post('reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
 });
 
 /*
@@ -60,6 +75,14 @@ Route::middleware('guest')->group(function () {
 */
 Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::get('email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware('signed')
+        ->name('verification.verify');
+    Route::post('email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
 
     Route::get('watchlist', WatchListController::class)->name('watchlist');
     Route::delete('watchlist/bulk', [WatchListBulkController::class, 'destroy'])->name('watchlist.bulk');
@@ -76,14 +99,27 @@ Route::middleware('auth')->group(function () {
     Route::patch('settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::patch('settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
 
-    Route::middleware('throttle:history')->group(function () {
-        Route::post('history/touch', [WatchHistoryController::class, 'touch'])->name('history.touch');
-        Route::post('history/mark-watched', [WatchHistoryController::class, 'markWatched'])->name('history.mark');
-        Route::post('history/bump', [WatchHistoryController::class, 'bump'])->name('history.bump');
-    });
+    Route::post('billing/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
+    Route::get('billing/success', [BillingController::class, 'success'])->name('billing.success');
+    Route::get('billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
 
-    Route::delete('history/clear', [WatchHistoryController::class, 'clear'])->name('history.clear');
-    Route::delete('history/{history}', [WatchHistoryController::class, 'destroy'])->name('history.destroy');
+    Route::middleware('verified')->group(function () {
+        Route::get('tonight-queue', [TonightQueueController::class, 'index'])->name('tonight-queue.index');
+        Route::post('tonight-queue/toggle', [TonightQueueController::class, 'toggle'])->name('tonight-queue.toggle');
+        Route::delete('tonight-queue/item', [TonightQueueController::class, 'destroy'])->name('tonight-queue.destroy');
+        Route::delete('tonight-queue', [TonightQueueController::class, 'clear'])->name('tonight-queue.clear');
+
+        Route::middleware('can_play')->group(function () {
+            Route::middleware('throttle:history')->group(function () {
+                Route::post('history/touch', [WatchHistoryController::class, 'touch'])->name('history.touch');
+                Route::post('history/mark-watched', [WatchHistoryController::class, 'markWatched'])->name('history.mark');
+                Route::post('history/bump', [WatchHistoryController::class, 'bump'])->name('history.bump');
+            });
+
+            Route::delete('history/clear', [WatchHistoryController::class, 'clear'])->name('history.clear');
+            Route::delete('history/{history}', [WatchHistoryController::class, 'destroy'])->name('history.destroy');
+        });
+    });
 
     Route::middleware('throttle:comments')->group(function () {
         Route::post('comments', [CommentController::class, 'store'])->name('comments.store');

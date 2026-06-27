@@ -21,7 +21,7 @@ class SettingsService implements SettingsServiceInterface
         $setting = $this->forUser($user);
         $setting->fill($attributes)->save();
 
-        if (array_key_exists('favorite_genre_ids', $attributes)) {
+        if (array_key_exists('favorite_genre_ids', $attributes) || array_key_exists('allow_adult', $attributes)) {
             HomeCache::bust();
         }
 

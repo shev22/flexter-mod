@@ -147,4 +147,41 @@ final class Tmdb
             ->values()
             ->all();
     }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    public static function usCertification(array $payload): ?string
+    {
+        foreach ($payload['release_dates']['results'] ?? [] as $country) {
+            if (($country['iso_3166_1'] ?? '') !== 'US') {
+                continue;
+            }
+
+            foreach ($country['release_dates'] ?? [] as $release) {
+                $cert = self::normalizeCertification($release['certification'] ?? null);
+
+                if ($cert !== '') {
+                    return $cert;
+                }
+            }
+        }
+
+        foreach ($payload['content_ratings']['results'] ?? [] as $rating) {
+            if (($rating['iso_3166_1'] ?? '') === 'US') {
+                $cert = self::normalizeCertification($rating['rating'] ?? null);
+
+                if ($cert !== '') {
+                    return $cert;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static function normalizeCertification(?string $certification): string
+    {
+        return strtoupper(trim((string) ($certification ?? '')));
+    }
 }

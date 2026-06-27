@@ -61,7 +61,7 @@ function toggleSpoilerFree() {
             autoplay_trailers: s.autoplay_trailers,
             reduce_motion: s.reduce_motion,
             subtitles: s.subtitles,
-            maturity: s.maturity,
+            allow_adult: s.allow_adult ?? false,
             density: s.density,
             high_contrast: s.high_contrast,
             language: s.language,

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import {
     MagnifyingGlassIcon,
@@ -17,8 +17,11 @@ import {
 import { HeartIcon as HeartOutline } from '@heroicons/vue/24/outline';
 import { slugify, mediaTypeLabel, trimText } from '../../lib/format.js';
 import { useWatchlist } from '../../lib/useWatchlist.js';
+import { filterAdultContent } from '../../lib/allowAdult.js';
 
 const emit = defineEmits(['close']);
+
+const page = usePage();
 
 const query = ref('');
 const results = ref([]);
@@ -69,9 +72,12 @@ async function fetchResults() {
             params: { query: query.value },
             signal: abortController.signal,
         });
-        results.value = normalizeResults(data.results)
-            .filter((r) => r.title)
-            .slice(0, 12);
+        results.value = filterAdultContent(
+            normalizeResults(data.results)
+                .filter((r) => r.title)
+                .slice(0, 12),
+            page.props.settings?.allow_adult ?? false,
+        );
     } catch (e) {
         if (e?.code !== 'ERR_CANCELED') {
             results.value = [];

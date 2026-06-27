@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Billing\Services\Interfaces\BillingServiceInterface;
 use App\Genre\Models\Genre;
+use App\Shared\Data\PlaybackSettingsData;
 use App\Shared\Data\SettingsData;
 use App\Site\Services\Interfaces\SiteSettingsServiceInterface;
 use Illuminate\Http\Request;
@@ -45,9 +47,12 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                'status' => fn () => $request->session()->get('status'),
             ],
             'site' => function () {
-                $settings = app(SiteSettingsServiceInterface::class)->get();
+                $siteSettings = app(SiteSettingsServiceInterface::class);
+                $settings = $siteSettings->get();
+                $payload = $siteSettings->getPayload();
 
                 return [
                     'name' => $settings->siteName,
@@ -59,15 +64,10 @@ class HandleInertiaRequests extends Middleware
                         'public_lists' => $settings->enablePublicLists,
                         'site_wide_autoplay' => $settings->siteWideAutoplay,
                     ],
-                    'playback' => [
-                        'enabled' => (bool) config('flexter.playback.enabled'),
-                        'provider' => (string) config('flexter.playback.provider'),
-                        'base_url' => (string) config('flexter.playback.base_url'),
-                        'url_style' => (string) config('flexter.playback.url_style'),
-                        'progress_mode' => (string) config('flexter.playback.progress_mode'),
-                    ],
+                    'playback' => PlaybackSettingsData::fromArray($payload)->toSharedArray(),
                 ];
             },
+            'billing' => fn () => app(BillingServiceInterface::class)->sharedState($request->user()),
         ]);
     }
 }

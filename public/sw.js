@@ -1,7 +1,14 @@
-const CACHE = 'flexter-static-v2';
+const CACHE = 'flexter-static-v3';
+const OFFLINE_URL = '/offline.html';
 
 self.addEventListener('install', (event) => {
-    event.waitUntil(self.skipWaiting());
+    event.waitUntil(
+        caches.open(CACHE).then((cache) => cache.addAll([
+            OFFLINE_URL,
+            '/manifest.json',
+            '/favicon.ico',
+        ])).then(() => self.skipWaiting()),
+    );
 });
 
 self.addEventListener('activate', (event) => {
@@ -19,6 +26,7 @@ function isStaticAsset(url) {
         || url.pathname.startsWith('/video/')
         || url.pathname === '/manifest.json'
         || url.pathname === '/favicon.ico'
+        || url.pathname === OFFLINE_URL
         || /\.(js|css|woff2?|png|jpe?g|gif|webp|svg|ico|mp4)$/i.test(url.pathname)
     );
 }
@@ -33,11 +41,17 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Never intercept Inertia visits, navigations, or other dynamic requests.
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request).catch(() => caches.match(OFFLINE_URL)),
+        );
+
+        return;
+    }
+
     if (
         event.request.headers.get('X-Inertia')
         || event.request.headers.get('X-Requested-With') === 'XMLHttpRequest'
-        || event.request.mode === 'navigate'
         || ! isStaticAsset(url)
     ) {
         return;

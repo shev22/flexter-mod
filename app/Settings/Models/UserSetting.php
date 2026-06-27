@@ -15,23 +15,26 @@ class UserSetting extends Model
         'autoplay_trailers',
         'reduce_motion',
         'subtitles',
-        'maturity',
+        'allow_adult',
         'density',
         'high_contrast',
         'language',
         'email_notifications',
         'spoiler_free',
         'favorite_genre_ids',
+        'tonight_queue_started_at',
     ];
 
     protected $casts = [
         'autoplay_trailers' => 'boolean',
         'reduce_motion' => 'boolean',
         'subtitles' => 'boolean',
+        'allow_adult' => 'boolean',
         'high_contrast' => 'boolean',
         'email_notifications' => 'boolean',
         'spoiler_free' => 'boolean',
         'favorite_genre_ids' => 'array',
+        'tonight_queue_started_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

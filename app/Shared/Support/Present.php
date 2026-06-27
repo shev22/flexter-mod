@@ -5,6 +5,7 @@ namespace App\Shared\Support;
 use App\Movie\Models\Movie;
 use App\Shared\Data\MediaCardData;
 use App\Shared\Data\MediaSummaryData;
+use App\Shared\Support\AdultContent;
 use App\Tv\Models\Tv;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -36,10 +37,12 @@ final class Present
     {
         Watchlist::keys();
 
-        return collect($items)
-            ->map(fn ($model) => self::card($model)->toArray())
-            ->values()
-            ->all();
+        return AdultContent::filterCards(
+            collect($items)
+                ->map(fn ($model) => self::card($model)->toArray())
+                ->values()
+                ->all(),
+        );
     }
 
     /**
@@ -63,10 +66,12 @@ final class Present
     {
         Watchlist::keys();
 
-        return collect($items)
-            ->map(fn ($model) => self::media($model)->toArray())
-            ->values()
-            ->all();
+        return AdultContent::filterCards(
+            collect($items)
+                ->map(fn ($model) => self::media($model)->toArray())
+                ->values()
+                ->all(),
+        );
     }
 
     /**

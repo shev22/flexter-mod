@@ -3,13 +3,19 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
 import AppButton from '../../Components/ui/AppButton.vue';
+import { guestDataField } from '../../lib/guestMerge.js';
 
 defineOptions({ layout: AuthLayout });
 
 const form = useForm({ name: '', email: '', password: '', password_confirmation: '' });
 
 function submit() {
-    form.post(route('register'), { onFinish: () => form.reset('password', 'password_confirmation') });
+    form
+        .transform((data) => ({
+            ...data,
+            guest_data: guestDataField(),
+        }))
+        .post(route('register'), { onFinish: () => form.reset('password', 'password_confirmation') });
 }
 </script>
 

@@ -6,6 +6,7 @@ use App\Actor\Models\Actor;
 use App\Models\User;
 use App\Services\MediaService\Interfaces\MediaApiClientInterface;
 use App\Shared\Data\MediaCardData;
+use App\Shared\Support\AdultContent;
 use App\Shared\Support\Watchlist;
 use App\WatchList\Models\WatchList as WatchListItem;
 use Illuminate\Support\Facades\Cache;
@@ -31,7 +32,6 @@ class ActorFeedService
             ->where('user_id', $user->id)
             ->where('media_type', Actor::class)
             ->orderByDesc('created_at')
-            ->limit(3)
             ->pluck('media_id');
 
         if ($actorIds->isEmpty()) {
@@ -64,6 +64,6 @@ class ActorFeedService
             }
         }
 
-        return $results->shuffle()->values()->all();
+        return AdultContent::filterCards($results->shuffle()->values()->all());
     }
 }

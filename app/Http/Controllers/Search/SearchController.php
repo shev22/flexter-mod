@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Search;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SearchResource;
 use App\Services\MediaService\Interfaces\MediaApiClientInterface;
+use App\Shared\Support\AdultContent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,10 +23,10 @@ class SearchController extends Controller
             return response()->json(['results' => []]);
         }
 
-        $results = $this->apiClient->search($query);
+        $results = AdultContent::filterTmdb($this->apiClient->search($query)->all());
 
         return response()->json([
-            'results' => SearchResource::collection($results)->resolve(),
+            'results' => SearchResource::collection(collect($results))->resolve(),
         ]);
     }
 
@@ -35,7 +36,9 @@ class SearchController extends Controller
         $page = max(1, (int) $request->input('page', 1));
         $perPage = 24;
 
-        $all = ! empty($query) ? $this->apiClient->search($query, true) : collect();
+        $all = ! empty($query)
+            ? collect(AdultContent::filterTmdb($this->apiClient->search($query, true)->all()))
+            : collect();
         $total = $all->count();
         $lastPage = max(1, (int) ceil($total / $perPage));
         $page = min($page, $lastPage);

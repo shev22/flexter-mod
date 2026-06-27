@@ -8,6 +8,14 @@ const props = defineProps({
     item: { type: Object, required: true },
 });
 
+const episodeLabel = computed(() => {
+    if (props.item.type !== 'tv' || props.item.season == null || props.item.episode == null) {
+        return null;
+    }
+
+    return `S${props.item.season} · E${props.item.episode}`;
+});
+
 const href = computed(() => {
     let url = detailRoute(props.item);
     if (props.item.season != null && props.item.episode != null) {
@@ -37,7 +45,9 @@ const href = computed(() => {
                     <div class="h-full rounded-full bg-accent" :style="{ width: `${item.progress}%` }" />
                 </div>
                 <p class="line-clamp-1 text-xs font-semibold text-white">{{ item.title }}</p>
-                <p class="text-[10px] text-white/70">{{ item.progress }}% · {{ item.last_watched }}</p>
+                <p class="text-[10px] text-white/70">
+                    <template v-if="episodeLabel">{{ episodeLabel }} · </template>{{ item.progress }}% · {{ item.last_watched }}
+                </p>
             </div>
 
             <span class="btn-play absolute left-2 top-2 h-8 w-8">

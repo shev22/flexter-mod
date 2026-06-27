@@ -71,6 +71,21 @@
         --muted: 92 92 112;
     }
 
+    /* Soft milky warm white — gentler than standard light */
+    html[data-theme='cream']:not(.dark) {
+        --bg: 252 249 241;
+        --surface: 255 253 247;
+        --surface-2: 246 241 230;
+        --hair: 58 54 46;
+        --text: 50 46 40;
+        --muted: 136 126 110;
+    }
+
+    html[data-theme='cream']:not(.dark)[data-high-contrast='true'] {
+        --hair: 38 34 28;
+        --muted: 58 52 44;
+    }
+
     html {
         scroll-behavior: smooth;
     }

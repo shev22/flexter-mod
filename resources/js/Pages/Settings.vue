@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import {
     CheckIcon,
@@ -11,6 +11,7 @@ import {
     UserCircleIcon,
     ShieldCheckIcon,
     SparklesIcon,
+    CreditCardIcon,
 } from '@heroicons/vue/24/solid';
 import Toggle from '../Components/ui/Toggle.vue';
 import SelectMenu from '../Components/ui/SelectMenu.vue';
@@ -18,12 +19,14 @@ import MultiSelectMenu from '../Components/ui/MultiSelectMenu.vue';
 import AppButton from '../Components/ui/AppButton.vue';
 import WatchHistoryList from '../Components/settings/WatchHistoryList.vue';
 import { applyAppearance } from '../lib/appearance.js';
+import { useBilling } from '../lib/useBilling.js';
 
 const props = defineProps({
     settings: { type: Object, required: true },
     stats: { type: Object, required: true },
     historyStats: { type: Object, default: () => ({ total: 0, completed: 0, in_progress: 0, hours: 0 }) },
     memberSince: { type: String, default: '' },
+    billing: { type: Object, default: () => ({}) },
 });
 
 const history = ref([]);
@@ -32,18 +35,30 @@ const historyLoading = ref(false);
 const historyLoaded = ref(false);
 
 const authUser = usePage().props.auth?.user ?? {};
+const { paymentsEnabled, isSubscribed, formattedPrice, plan } = useBilling();
 const genreOptions = computed(() =>
     (usePage().props.genres ?? []).map((g) => ({ value: g.id, label: g.name })),
 );
 
-const tabs = [
-    { id: 'overview', label: 'Overview', icon: SparklesIcon },
-    { id: 'appearance', label: 'Appearance', icon: PaintBrushIcon },
-    { id: 'playback', label: 'Playback', icon: PlayCircleIcon },
-    { id: 'history', label: 'Watch history', icon: ClockIcon },
-    { id: 'account', label: 'Account', icon: UserCircleIcon },
-    { id: 'privacy', label: 'Privacy', icon: ShieldCheckIcon },
-];
+const tabs = computed(() => {
+    const items = [
+        { id: 'overview', label: 'Overview', icon: SparklesIcon },
+    ];
+
+    if (paymentsEnabled.value) {
+        items.push({ id: 'billing', label: 'Subscription', icon: CreditCardIcon });
+    }
+
+    items.push(
+        { id: 'appearance', label: 'Appearance', icon: PaintBrushIcon },
+        { id: 'playback', label: 'Playback', icon: PlayCircleIcon },
+        { id: 'history', label: 'Watch history', icon: ClockIcon },
+        { id: 'account', label: 'Account', icon: UserCircleIcon },
+        { id: 'privacy', label: 'Privacy', icon: ShieldCheckIcon },
+    );
+
+    return items;
+});
 
 const activeTab = ref('overview');
 
@@ -60,7 +75,7 @@ const prefs = useForm({
     autoplay_trailers: props.settings.autoplay_trailers,
     reduce_motion: props.settings.reduce_motion,
     subtitles: props.settings.subtitles,
-    maturity: props.settings.maturity,
+    allow_adult: props.settings.allow_adult ?? false,
     density: props.settings.density,
     high_contrast: props.settings.high_contrast,
     language: props.settings.language,
@@ -70,9 +85,10 @@ const prefs = useForm({
 });
 
 const themes = [
-    { value: 'dark', label: 'Dark', hint: 'Cinematic default' },
-    { value: 'light', label: 'Light', hint: 'Bright & clean' },
-    { value: 'system', label: 'System', hint: 'Follow OS' },
+    { value: 'dark', label: 'Dark', hint: 'Cinematic default', swatch: '#08080e' },
+    { value: 'light', label: 'Light', hint: 'Bright & clean', swatch: '#f5f5f8' },
+    { value: 'cream', label: 'Cream', hint: 'Soft milky white', swatch: '#fcf9f1' },
+    { value: 'system', label: 'System', hint: 'Follow OS', swatch: 'linear-gradient(135deg, #08080e 50%, #f5f5f8 50%)' },
 ];
 
 const accents = computed(() => props.settings.accents ?? []);
@@ -88,12 +104,6 @@ const languageOptions = [
     { value: 'es', label: 'Español' },
     { value: 'fr', label: 'Français' },
     { value: 'de', label: 'Deutsch' },
-];
-
-const maturityOptions = [
-    { value: 'all', label: 'All audiences' },
-    { value: 'teen', label: 'Teen and up' },
-    { value: 'mature', label: 'Mature only' },
 ];
 
 const statCards = computed(() => [
@@ -150,7 +160,16 @@ watch(activeTab, (tab) => {
 });
 
 function savePrefs() {
-    prefs.patch(route('settings.update'), { preserveScroll: true });
+    const previousAllowAdult = props.settings.allow_adult;
+
+    prefs.patch(route('settings.update'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            if (prefs.allow_adult !== previousAllowAdult) {
+                router.reload({ preserveScroll: true });
+            }
+        },
+    });
 }
 
 function saveProfile() {
@@ -268,7 +287,7 @@ function saveProfile() {
 
                     <div class="mt-8">
                         <p class="mb-3 text-sm font-medium text-ink">Theme mode</p>
-                        <div class="grid gap-3 sm:grid-cols-3">
+                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                             <button
                                 v-for="t in themes"
                                 :key="t.value"
@@ -279,6 +298,10 @@ function saveProfile() {
                                     : 'border-hair/10 bg-surface2/30 hover:border-hair/20'"
                                 @click="prefs.theme = t.value"
                             >
+                                <span
+                                    class="mb-3 block h-8 w-full rounded-lg ring-1 ring-hair/10"
+                                    :style="{ background: t.swatch }"
+                                />
                                 <p class="font-semibold text-ink">{{ t.label }}</p>
                                 <p class="mt-1 text-xs text-muted">{{ t.hint }}</p>
                             </button>
@@ -358,13 +381,53 @@ function saveProfile() {
                             <p class="mb-2 text-sm font-medium text-ink">Preferred language</p>
                             <SelectMenu v-model="prefs.language" :options="languageOptions" />
                         </div>
-                        <div class="rounded-2xl border border-hair/10 bg-surface2/30 p-4">
-                            <p class="mb-2 text-sm font-medium text-ink">Maturity rating</p>
-                            <SelectMenu v-model="prefs.maturity" :options="maturityOptions" />
-                        </div>
+                        <label class="flex items-center justify-between gap-4 rounded-2xl border border-hair/10 bg-surface2/30 p-4">
+                            <span><span class="block text-sm font-medium text-ink">Allow adult content</span><span class="text-xs text-muted">Show adult titles in browse, search, and recommendations.</span></span>
+                            <Toggle v-model="prefs.allow_adult" />
+                        </label>
                     </div>
 
                     <AppButton class="mt-8" :disabled="prefs.processing" @click="savePrefs">Save playback settings</AppButton>
+                </section>
+
+                <!-- Billing -->
+                <section v-else-if="activeTab === 'billing'" class="rounded-3xl glass p-6 sm:p-8">
+                    <h2 class="font-display text-xl font-bold text-ink">Subscription</h2>
+                    <p class="mt-1 text-sm text-muted">Manage your Flexter Premium plan.</p>
+
+                    <div class="mt-8 rounded-2xl border border-hair/10 bg-surface2/40 p-6">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-muted">Current plan</p>
+                                <p class="mt-2 font-display text-2xl font-bold text-ink">
+                                    {{ isSubscribed ? (plan.name || 'Flexter Premium') : 'Free' }}
+                                </p>
+                                <p class="mt-1 text-sm text-muted">
+                                    <template v-if="isSubscribed">
+                                        Active — unlimited streaming included.
+                                    </template>
+                                    <template v-else>
+                                        Streaming locked. Subscribe for {{ formattedPrice }}/month.
+                                    </template>
+                                </p>
+                            </div>
+                            <span
+                                class="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide"
+                                :class="isSubscribed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-hair/15 text-muted'"
+                            >
+                                {{ isSubscribed ? 'Active' : 'Inactive' }}
+                            </span>
+                        </div>
+
+                        <div class="mt-6 flex flex-wrap gap-3">
+                            <AppButton v-if="!isSubscribed" :href="route('billing.subscribe')">
+                                Subscribe — {{ formattedPrice }}/mo
+                            </AppButton>
+                            <AppButton v-else :href="route('billing.portal')" variant="glass">
+                                Manage billing
+                            </AppButton>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- History -->

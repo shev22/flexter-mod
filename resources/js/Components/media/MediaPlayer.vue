@@ -3,12 +3,13 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { XMarkIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
 import {
-    buildVidsrcUrl,
+    buildPlaybackUrl,
     createSessionProgressTracker,
-    parseVidsrcMessage,
+    parsePlaybackMessage,
     saveGuestSessionProgress,
-} from '../../lib/vidsrc.js';
+} from '../../lib/playback.js';
 import { bumpProgressSilent, touchProgressSilent } from '../../lib/useWatchHistory.js';
+import { useBilling } from '../../lib/useBilling.js';
 
 const props = defineProps({
     type: { type: String, required: true },
@@ -24,6 +25,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'progress']);
 
 const page = usePage();
+const { canPlay } = useBilling();
 const embedSrc = ref(null);
 const playerError = ref(null);
 const lastSynced = ref({ percent: props.initialProgress, at: 0 });
@@ -37,10 +39,23 @@ let sessionTracker = null;
 
 const playback = computed(() => page.props.site?.playback ?? {});
 const isEnabled = computed(() => playback.value.enabled !== false && playback.value.provider !== 'disabled');
-const usePostMessage = computed(() => playback.value.progress_mode === 'postmessage');
+const usePostMessage = computed(
+    () => playback.value.progress_mode === 'postmessage' || playback.value.provider === 'vidphantom',
+);
+
+function normalizeIncomingProgress(percent) {
+    const next = clampPercent(percent);
+
+    // Ignore spurious 100% from provider unload / ended noise when playback was not near the end.
+    if (next >= 100 && latest.value.percent < 90) {
+        return latest.value.percent > 0 ? latest.value.percent : next;
+    }
+
+    return next;
+}
 
 function syncProgress(percent, season = null, episode = null, force = false) {
-    const next = clampPercent(Math.max(latest.value.percent, percent));
+    const next = clampPercent(Math.max(latest.value.percent, normalizeIncomingProgress(percent)));
 
     if (next <= 0) {
         return;
@@ -97,6 +112,7 @@ function syncProgress(percent, season = null, episode = null, force = false) {
         next,
         props.type === 'tv' ? latest.value.season : null,
         props.type === 'tv' ? latest.value.episode : null,
+        { keepalive: force },
     );
 }
 
@@ -106,7 +122,13 @@ function onMessage(event) {
     }
 
     try {
-        const parsed = parseVidsrcMessage(event, { baseUrl: playback.value.base_url });
+        const parsed = parsePlaybackMessage(event, {
+            baseUrl: playback.value.base_url,
+            type: props.type,
+            id: props.id,
+            season: props.season,
+            episode: props.episode,
+        });
 
         if (!parsed || String(parsed.id) !== String(props.id) || parsed.type !== props.type) {
             return;
@@ -151,6 +173,24 @@ function openExternal() {
     }
 }
 
+const FINISHED_THRESHOLD = 95;
+
+function playbackStartProgress(percent) {
+    if (percent >= FINISHED_THRESHOLD) {
+        return 0;
+    }
+
+    return percent > 0 ? percent : 0;
+}
+
+function touchProgressOnOpen(percent) {
+    if (percent >= FINISHED_THRESHOLD) {
+        return 5;
+    }
+
+    return Math.max(5, percent || 5);
+}
+
 function clampPercent(value) {
     return Math.round(Math.min(100, Math.max(0, Number(value) || 0)));
 }
@@ -161,14 +201,20 @@ onMounted(() => {
         return;
     }
 
+    if (!canPlay.value) {
+        playerError.value = 'An active subscription is required to stream.';
+        return;
+    }
+
     try {
-        embedSrc.value = buildVidsrcUrl({
+        embedSrc.value = buildPlaybackUrl({
             type: props.type,
             id: props.id,
             season: props.season,
             episode: props.episode,
-            baseUrl: playback.value.base_url,
-            urlStyle: playback.value.url_style,
+            playback: playback.value,
+            progressPercent: playbackStartProgress(props.initialProgress || 0),
+            runtime: props.runtime,
         });
     } catch (error) {
         console.error('Failed to build playback URL', error);
@@ -180,7 +226,7 @@ onMounted(() => {
         touchProgressSilent(
             props.type,
             Number(props.id),
-            Math.max(5, props.initialProgress || 5),
+            touchProgressOnOpen(props.initialProgress || 0),
             props.type === 'tv' ? props.season : null,
             props.type === 'tv' ? props.episode : null,
         );
@@ -197,8 +243,16 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     if (sessionTracker) {
-        sessionTracker.stop();
+        const final = sessionTracker.stop();
+        syncProgress(final, latest.value.season, latest.value.episode, true);
         sessionTracker = null;
+    } else {
+        syncProgress(
+            latest.value.percent || props.initialProgress || 5,
+            latest.value.season,
+            latest.value.episode,
+            true,
+        );
     }
 
     window.removeEventListener('message', onMessage);

@@ -15,7 +15,7 @@ final class SettingsData implements Arrayable, JsonSerializable
         public bool $autoplayTrailers,
         public bool $reduceMotion,
         public bool $subtitles,
-        public string $maturity,
+        public bool $allowAdult,
         public string $density,
         public bool $highContrast,
         public string $language,
@@ -33,7 +33,7 @@ final class SettingsData implements Arrayable, JsonSerializable
             autoplayTrailers: true,
             reduceMotion: false,
             subtitles: true,
-            maturity: 'all',
+            allowAdult: false,
             density: 'comfortable',
             highContrast: false,
             language: 'en',
@@ -59,7 +59,9 @@ final class SettingsData implements Arrayable, JsonSerializable
             subtitles: $setting->subtitles === null
                 ? $defaults->subtitles
                 : (bool) $setting->subtitles,
-            maturity: $setting->maturity ?? $defaults->maturity,
+            allowAdult: $setting->allow_adult === null
+                ? $defaults->allowAdult
+                : (bool) $setting->allow_adult,
             density: $setting->density ?? $defaults->density,
             highContrast: $setting->high_contrast === null
                 ? $defaults->highContrast
@@ -122,7 +124,7 @@ final class SettingsData implements Arrayable, JsonSerializable
             'autoplay_trailers' => $this->autoplayTrailers,
             'reduce_motion' => $this->reduceMotion,
             'subtitles' => $this->subtitles,
-            'maturity' => $this->maturity,
+            'allow_adult' => $this->allowAdult,
             'density' => $this->density,
             'high_contrast' => $this->highContrast,
             'language' => $this->language,

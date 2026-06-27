@@ -120,9 +120,9 @@ export function isPlaybackOrigin(origin, baseUrl = 'https://vidsrc.to') {
         const expected = new URL(baseUrl).hostname.replace(/^www\./, '');
         const actual = new URL(origin).hostname.replace(/^www\./, '');
 
-        return actual === expected || actual.endsWith(`.${expected}`) || actual.includes('vidsrc');
+        return actual === expected || actual.endsWith(`.${expected}`) || actual.includes('vidsrc') || actual.includes('vidplus') || actual.includes('vidphantom');
     } catch {
-        return origin.includes('vidsrc');
+        return origin.includes('vidsrc') || origin.includes('vidplus') || origin.includes('vidphantom');
     }
 }
 
@@ -230,6 +230,26 @@ export function saveGuestSessionProgress({ type, id, season, episode, progress, 
         last_updated: Date.now(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+}
+
+/** Unfinished session progress for continue watching (any provider). */
+export function loadSessionContinueWatching(limit = 12) {
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+    return Object.values(stored)
+        .filter((item) => item?.progress > 0 && item.progress < 95)
+        .sort((a, b) => (b.last_updated ?? 0) - (a.last_updated ?? 0))
+        .slice(0, limit)
+        .map((item) => ({
+            type: item.type,
+            id: Number(item.id),
+            title: item.title ?? 'Untitled',
+            poster: item.poster ?? null,
+            progress: Math.round(item.progress),
+            season: item.season ?? null,
+            episode: item.episode ?? null,
+            last_watched: 'Recently',
+        }));
 }
 
 /** @deprecated use saveGuestSessionProgress */

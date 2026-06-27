@@ -1,4 +1,7 @@
 import { ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+import { route } from 'ziggy-js';
+import { clearGuestPayload } from './guestMerge.js';
 
 const STORAGE_KEY = 'flexter.tonight_queue';
 const TTL_MS = 24 * 60 * 60 * 1000;
@@ -53,20 +56,78 @@ function writeQueue(items, startedAt) {
 }
 
 const queue = ref(readQueue().items);
+let serverLoaded = false;
+
+function entryKey(type, id) {
+    return `${type}:${String(id)}`;
+}
+
+function isInQueue(items, type, id) {
+    const key = entryKey(type, id);
+
+    return items.some((entry) => entryKey(entry.type, entry.id) === key);
+}
+
+function isAuthed() {
+    return Boolean(usePage().props.auth?.user);
+}
+
+async function loadFromServer() {
+    if (!isAuthed() || serverLoaded) {
+        return;
+    }
+
+    try {
+        const { data } = await window.axios.get(route('tonight-queue.index'));
+        queue.value = data.items ?? [];
+        serverLoaded = true;
+        localStorage.removeItem(STORAGE_KEY);
+    } catch {
+        queue.value = readQueue().items;
+    }
+}
 
 export function useTonightQueue() {
+    if (isAuthed()) {
+        loadFromServer();
+    }
+
     function sync() {
+        if (isAuthed()) {
+            loadFromServer();
+
+            return;
+        }
+
         queue.value = readQueue().items;
     }
 
-    function add(item) {
+    async function add(item) {
         const { type, id, title, poster } = item;
         if (!type || !id) return;
 
-        let { items, startedAt } = readQueue();
-        const key = `${type}:${id}`;
+        if (isAuthed()) {
+            if (has(type, id)) {
+                return;
+            }
 
-        if (items.some((entry) => `${entry.type}:${entry.id}` === key)) return;
+            const { data } = await window.axios.post(route('tonight-queue.toggle'), {
+                type,
+                id,
+                title,
+                poster,
+            });
+
+            if (data.added) {
+                queue.value = data.items ?? [];
+            }
+
+            return;
+        }
+
+        let { items, startedAt } = readQueue();
+
+        if (isInQueue(items, type, id)) return;
 
         if (items.length === 0) {
             startedAt = Date.now();
@@ -77,9 +138,18 @@ export function useTonightQueue() {
         writeQueue(items, startedAt);
     }
 
-    function remove(type, id) {
+    async function remove(type, id) {
+        if (isAuthed()) {
+            const { data } = await window.axios.delete(route('tonight-queue.destroy'), {
+                data: { type, id },
+            });
+            queue.value = data.items ?? [];
+
+            return;
+        }
+
         let { items, startedAt } = readQueue();
-        items = items.filter((entry) => !(entry.type === type && entry.id === id));
+        items = items.filter((entry) => entryKey(entry.type, entry.id) !== entryKey(type, id));
 
         if (items.length === 0) {
             startedAt = null;
@@ -89,14 +159,49 @@ export function useTonightQueue() {
         writeQueue(items, startedAt);
     }
 
-    function clear() {
+    async function clear() {
+        if (isAuthed()) {
+            const { data } = await window.axios.delete(route('tonight-queue.clear'));
+            queue.value = data.items ?? [];
+
+            return;
+        }
+
         queue.value = [];
         writeQueue([], null);
     }
 
     function has(type, id) {
-        return readQueue().items.some((entry) => entry.type === type && entry.id === id);
+        return isInQueue(queue.value, type, id);
     }
 
-    return { queue, add, remove, clear, has, sync };
+    async function toggle(item) {
+        const { type, id, title, poster } = item;
+        if (!type || !id) return false;
+
+        if (isAuthed()) {
+            const { data } = await window.axios.post(route('tonight-queue.toggle'), {
+                type,
+                id,
+                title,
+                poster,
+            });
+            queue.value = data.items ?? [];
+            clearGuestPayload();
+
+            return Boolean(data.added);
+        }
+
+        if (has(type, id)) {
+            await remove(type, id);
+
+            return false;
+        }
+
+        await add({ type, id, title, poster });
+
+        return true;
+    }
+
+    return { queue, add, remove, toggle, clear, has, sync };
 }

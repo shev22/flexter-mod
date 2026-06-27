@@ -11,6 +11,11 @@ class SiteSettingsService implements SiteSettingsServiceInterface
 {
     public function get(): SiteSettingsData
     {
+        return SiteSettingsData::fromArray($this->getPayload());
+    }
+
+    public function getPayload(): array
+    {
         $payload = Cache::rememberForever(SiteSetting::CACHE_KEY, function (): array {
             $record = SiteSetting::query()->first();
 
@@ -24,23 +29,22 @@ class SiteSettingsService implements SiteSettingsServiceInterface
             return is_array($record->payload) ? $record->payload : [];
         });
 
-        return SiteSettingsData::fromArray(
-            array_merge(SiteSettingsData::defaults()->toArray(), $payload),
-        );
+        return array_merge(SiteSettingsData::defaults()->toArray(), $payload);
     }
 
     public function update(array $payload): SiteSettingsData
     {
-        $settings = SiteSettingsData::fromArray(
-            array_merge(SiteSettingsData::defaults()->toArray(), $payload),
-        );
-
         $record = SiteSetting::query()->first();
+        $existing = is_array($record?->payload) ? $record->payload : [];
+
+        $merged = array_merge(SiteSettingsData::defaults()->toArray(), $existing, $payload);
+        $settings = SiteSettingsData::fromArray($merged);
+        $stored = array_merge($merged, $settings->toArray());
 
         if ($record === null) {
-            SiteSetting::query()->create(['payload' => $settings->toArray()]);
+            SiteSetting::query()->create(['payload' => $stored]);
         } else {
-            $record->update(['payload' => $settings->toArray()]);
+            $record->update(['payload' => $stored]);
         }
 
         Cache::forget(SiteSetting::CACHE_KEY);

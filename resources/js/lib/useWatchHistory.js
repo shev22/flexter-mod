@@ -28,7 +28,7 @@ export function touchProgressSilent(type, id, progress = 15, season = null, epis
     }).catch(() => {});
 }
 
-export function bumpProgressSilent(type, id, progress, season = null, episode = null) {
+export function bumpProgressSilent(type, id, progress, season = null, episode = null, { keepalive = false } = {}) {
     const payload = { type, id, progress };
     if (season != null) payload.season = season;
     if (episode != null) payload.episode = episode;
@@ -36,6 +36,7 @@ export function bumpProgressSilent(type, id, progress, season = null, episode = 
     return fetch(route('history.bump'), {
         method: 'POST',
         credentials: 'same-origin',
+        keepalive,
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',

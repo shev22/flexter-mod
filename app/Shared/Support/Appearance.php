@@ -32,14 +32,11 @@ final class Appearance
     ];
 
     /** @var list<string> */
-    public const THEMES = ['dark', 'light', 'system'];
+    public const THEMES = ['dark', 'light', 'cream', 'system'];
 
     /** @var list<string> */
     public const DENSITIES = ['compact', 'comfortable', 'spacious'];
 
     /** @var list<string> */
     public const LANGUAGES = ['en', 'es', 'fr', 'de'];
-
-    /** @var list<string> */
-    public const MATURITY = ['all', 'teen', 'mature'];
 }

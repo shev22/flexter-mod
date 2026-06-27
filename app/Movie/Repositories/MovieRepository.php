@@ -22,7 +22,8 @@ class MovieRepository implements MovieRepositoryInterface
     {
         $movieIds = collect($data)->pluck('id')->toArray();
 
-        $movies = collect($data)->map(fn($movie) => [
+        $movies = collect($data)
+            ->map(fn ($movie) => [
             'id' => $movie['id'],
             'title' => $movie['title'],
             'logo' => $movie['logo'] ?? null,
@@ -37,6 +38,8 @@ class MovieRepository implements MovieRepositoryInterface
             'original_language' => $movie['original_language'],
             'popularity' => $movie['popularity'],
             'is_trending' => $movie['is_trending'] ?? false,
+            'adult' => (bool) ($movie['adult'] ?? false),
+            'certification' => $movie['certification'] ?? null,
             'category' => $category,
             'created_at' => now(),
             'updated_at' => now(),
@@ -46,7 +49,7 @@ class MovieRepository implements MovieRepositoryInterface
         Movie::upsert($movies, ['id'], [
             'title', 'poster_path', 'backdrop_path', 'overview', 'release_date',
             'vote_average', 'vote_count', 'original_language', 'is_trending', 'popularity',
-            'category', 'genre_ids', 'updated_at',
+            'category', 'genre_ids', 'adult', 'certification', 'updated_at',
         ]);
 
         $insertedMovies = Movie::whereIn('id', $movieIds)->get();

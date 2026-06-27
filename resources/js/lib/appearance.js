@@ -26,6 +26,15 @@ function persistAppearance(settings) {
     }
 }
 
+function applyDataTheme(root, theme, isDark) {
+    if (isDark) {
+        root.removeAttribute('data-theme');
+        return;
+    }
+
+    root.setAttribute('data-theme', theme === 'cream' ? 'cream' : 'light');
+}
+
 export function applyAppearance(settings) {
     const root = document.documentElement;
     const theme = settings?.theme ?? 'dark';
@@ -52,6 +61,7 @@ export function applyAppearance(settings) {
             window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
         root.classList.toggle('dark', isDark);
+        applyDataTheme(root, theme, isDark);
     };
 
     applyThemeClass();
