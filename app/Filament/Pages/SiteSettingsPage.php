@@ -159,6 +159,13 @@ class SiteSettingsPage extends Page implements HasForms
                             ->helperText('Comma-separated type:id pairs to prioritize in the hero carousel.')
                             ->columnSpanFull(),
                     ]),
+                Section::make('Billing & subscriptions')
+                    ->description('Require a paid monthly subscription to stream movies and series. Browsing, watchlists, comments, and all other features stay free.')
+                    ->schema([
+                        Toggle::make('enable_payments')
+                            ->label('Enable payment service')
+                            ->helperText('When off, everyone can play content for free. When on, only subscribed members (and admins) can stream.'),
+                    ]),
             ])
             ->statePath('data');
     }

@@ -10,6 +10,7 @@ use App\Repositories\Interfaces\HomeRepositoryInterface;
 use App\Services\HomeService\Interfaces\HomeServiceInterface;
 use App\Services\MediaService\MediaEnrichmentService;
 use App\Shared\Support\HomeCache;
+use App\Shared\Support\AdultContent;
 use App\Shared\Support\Present;
 use App\Site\Services\Interfaces\SiteSettingsServiceInterface;
 use App\WatchHistory\Services\Interfaces\WatchHistoryServiceInterface;
@@ -40,23 +41,20 @@ class HomeService implements HomeServiceInterface
 
         $heroLimit = $settings->homeHeroLimit;
 
-        $hero = collect($this->homeRepository->trendingMovies($heroLimit))
-            ->merge($this->homeRepository->trendingTv($heroLimit))
-            ->sortByDesc(fn ($item) => (float) $item->popularity)
-            ->take($heroLimit)
-            ->values();
+        $hero = AdultContent::filterModels(
+            collect($this->homeRepository->trendingMovies($heroLimit))
+                ->merge($this->homeRepository->trendingTv($heroLimit))
+                ->sortByDesc(fn ($item) => (float) $item->popularity)
+                ->take($heroLimit)
+        )->values();
 
         // Resolve trailers/logos from cache + TMDB detail calls for hero slides.
         $this->enricher->enrichMany($hero, min($heroLimit, 12));
 
         $heroItems = Present::heroList($this->prioritizeHero($hero, $settings->heroPinnedIds));
 
-        $payload = Cache::remember($key, config('flexter.cache.home_ttl'), function () use ($user, $settings) {
+        $payload = Cache::remember($key, config('flexter.cache.home_ttl'), function () use ($settings, $user) {
             return [
-                'hero' => [],
-                'continueWatching' => $user
-                    ? $this->watchHistoryService->continueWatching($user)
-                    : [],
                 'recommendations' => $settings->enableRecommendations
                     ? $this->recommendations->forUser($user, $settings->homeRecommendationsLimit)
                     : [],
@@ -79,6 +77,9 @@ class HomeService implements HomeServiceInterface
         });
 
         $payload['hero'] = $heroItems;
+        $payload['continueWatching'] = $user
+            ? $this->watchHistoryService->continueWatching($user)
+            : [];
         $payload['featuredLists'] = $settings->enablePublicLists
             ? $this->lists->featured($settings->homeFeaturedListsLimit)
             : [];

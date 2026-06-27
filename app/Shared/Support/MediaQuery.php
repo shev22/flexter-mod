@@ -13,6 +13,8 @@ final class MediaQuery
 {
     public static function apply(Builder $query, MediaFilterData $filter): Builder
     {
+        $query = AdultContent::applyToBuilder($query);
+
         $query->when($filter->search, fn (Builder $q, string $term) => $q->where('title', 'like', "%{$term}%"));
 
         $query->when($filter->genres, fn (Builder $q, array $genres) => $q->whereHas(

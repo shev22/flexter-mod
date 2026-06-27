@@ -1,6 +1,8 @@
 <?php
 
 use App\Actor\Http\Controllers\ActorsController;
+use App\Billing\Http\Controllers\BillingController;
+use App\Billing\Http\Controllers\StripeWebhookController;
 use App\Comment\Http\Controllers\CommentController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Feedback\FeedbackController;
@@ -42,8 +44,13 @@ Route::post('feedback', [FeedbackController::class, 'store'])
 
 Route::inertia('help', 'Main/Help')->name('help');
 
+Route::post('stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
+    ->name('cashier.webhook');
+
 Route::get('lists', [FlexterListController::class, 'index'])->name('lists');
 Route::get('lists/{slug}', [FlexterListController::class, 'show'])->name('lists.show');
+
+Route::get('subscribe', [BillingController::class, 'subscribe'])->name('billing.subscribe');
 
 /*
 | Guest authentication
@@ -75,6 +82,10 @@ Route::middleware('auth')->group(function () {
     Route::get('stats', StatsController::class)->name('stats');
     Route::patch('settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::patch('settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
+
+    Route::post('billing/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
+    Route::get('billing/success', [BillingController::class, 'success'])->name('billing.success');
+    Route::get('billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
 
     Route::middleware('throttle:history')->group(function () {
         Route::post('history/touch', [WatchHistoryController::class, 'touch'])->name('history.touch');

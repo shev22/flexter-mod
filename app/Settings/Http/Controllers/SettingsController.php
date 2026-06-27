@@ -2,6 +2,7 @@
 
 namespace App\Settings\Http\Controllers;
 
+use App\Billing\Services\Interfaces\BillingServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Movie\Models\Movie;
@@ -24,6 +25,7 @@ class SettingsController extends Controller
     public function __construct(
         private readonly SettingsServiceInterface $settingsService,
         private readonly WatchHistoryServiceInterface $watchHistoryService,
+        private readonly BillingServiceInterface $billingService,
     ) {}
 
     public function __invoke(): Response
@@ -37,6 +39,7 @@ class SettingsController extends Controller
             'stats' => $this->watchlistStats($user),
             'historyStats' => $this->watchHistoryService->stats($user),
             'memberSince' => $user->created_at?->format('M, Y'),
+            'billing' => $this->billingService->sharedState($user),
         ]);
     }
 
@@ -59,7 +62,7 @@ class SettingsController extends Controller
             'autoplay_trailers' => ['required', 'boolean'],
             'reduce_motion' => ['required', 'boolean'],
             'subtitles' => ['required', 'boolean'],
-            'maturity' => ['required', Rule::in(Appearance::MATURITY)],
+            'allow_adult' => ['required', 'boolean'],
             'density' => ['required', Rule::in(Appearance::DENSITIES)],
             'high_contrast' => ['required', 'boolean'],
             'language' => ['required', Rule::in(Appearance::LANGUAGES)],

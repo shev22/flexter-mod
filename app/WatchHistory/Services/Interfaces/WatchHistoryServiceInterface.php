@@ -30,4 +30,6 @@ interface WatchHistoryServiceInterface
     public function progressFor(User $user, string $type, int $mediaId): ?WatchHistory;
 
     public function latestProgressFor(User $user, string $type, int $mediaId): ?WatchHistory;
+
+    public function progressForEpisode(User $user, string $type, int $mediaId, int $season, int $episode): ?WatchHistory;
 }

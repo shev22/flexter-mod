@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Shared\Data\MediaCardData;
 use App\Shared\Data\MediaDetailData;
 use App\Shared\Data\MediaFilterData;
+use App\Shared\Support\AdultContent;
 use App\Shared\Support\Present;
 use App\Shared\Support\Watchlist;
 use App\WatchHistory\Services\Interfaces\WatchHistoryServiceInterface;
@@ -16,6 +17,7 @@ use App\Tv\Http\Request\TvFilterationRequest;
 use App\Tv\Services\Interfaces\TvServiceInterface;
 use App\WatchList\Http\Request\WatchListFiltrationRequest;
 use App\WatchList\Services\Interfaces\WatchListServiceInterface;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -39,11 +41,15 @@ class TvController extends Controller
         ]);
     }
 
-    public function show(string $slug, string $tvId): Response
+    public function show(string $slug, string $tvId, Request $request): Response
     {
         $detail = $this->tvService->getTvWithRelatedTv($tvId);
 
-        $related = collect($detail['related'] ?? [])
+        if ($detail === [] || ! AdultContent::allowsDetail($detail)) {
+            abort(404);
+        }
+
+        $related = collect(AdultContent::filterTmdb($detail['related'] ?? []))
             ->take(12)
             ->map(fn ($item) => MediaCardData::fromTmdb($item, 'tv', Watchlist::has('tv', (int) ($item['id'] ?? 0)))->toArray())
             ->values()
@@ -52,12 +58,22 @@ class TvController extends Controller
         $watchProgress = null;
         $watchContext = null;
         if ($user = Auth::user()) {
-            $entry = $this->watchHistoryService->latestProgressFor($user, 'tv', (int) $tvId);
-            $watchProgress = $entry ? (int) $entry->progress_percent : 0;
-            $watchContext = $entry ? [
-                'season' => $entry->season_number,
-                'episode' => $entry->episode_number,
-            ] : null;
+            $hasEpisode = $request->has('season') && $request->has('episode');
+            $season = $hasEpisode ? $request->integer('season') : null;
+            $episode = $hasEpisode ? $request->integer('episode') : null;
+
+            if ($hasEpisode) {
+                $entry = $this->watchHistoryService->progressForEpisode($user, 'tv', (int) $tvId, $season, $episode);
+                $watchProgress = $entry ? (int) $entry->progress_percent : 0;
+                $watchContext = ['season' => $season, 'episode' => $episode];
+            } else {
+                $entry = $this->watchHistoryService->latestProgressFor($user, 'tv', (int) $tvId);
+                $watchProgress = $entry ? (int) $entry->progress_percent : 0;
+                $watchContext = $entry ? [
+                    'season' => $entry->season_number,
+                    'episode' => $entry->episode_number,
+                ] : null;
+            }
         }
 
         $media = MediaDetailData::fromTmdb($detail, 'tv', $related, Watchlist::has('tv', (int) ($detail['id'] ?? 0)));

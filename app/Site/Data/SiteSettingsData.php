@@ -35,6 +35,7 @@ final class SiteSettingsData implements Arrayable, JsonSerializable
         public int $homeRecommendationsLimit,
         public int $homeActorFeedLimit,
         public int $homeFeaturedListsLimit,
+        public bool $enablePayments,
     ) {}
 
     public static function defaults(): self
@@ -65,6 +66,7 @@ final class SiteSettingsData implements Arrayable, JsonSerializable
             homeRecommendationsLimit: 20,
             homeActorFeedLimit: 10,
             homeFeaturedListsLimit: 6,
+            enablePayments: false,
         );
     }
 
@@ -101,6 +103,7 @@ final class SiteSettingsData implements Arrayable, JsonSerializable
             homeRecommendationsLimit: self::int($payload['home_recommendations_limit'] ?? null, $defaults->homeRecommendationsLimit, 4, 48),
             homeActorFeedLimit: self::int($payload['home_actor_feed_limit'] ?? null, $defaults->homeActorFeedLimit, 4, 36),
             homeFeaturedListsLimit: self::int($payload['home_featured_lists_limit'] ?? null, $defaults->homeFeaturedListsLimit, 1, 12),
+            enablePayments: (bool) ($payload['enable_payments'] ?? $defaults->enablePayments),
         );
     }
 
@@ -151,6 +154,7 @@ final class SiteSettingsData implements Arrayable, JsonSerializable
             'home_recommendations_limit' => $this->homeRecommendationsLimit,
             'home_actor_feed_limit' => $this->homeActorFeedLimit,
             'home_featured_lists_limit' => $this->homeFeaturedListsLimit,
+            'enable_payments' => $this->enablePayments,
         ];
     }
 

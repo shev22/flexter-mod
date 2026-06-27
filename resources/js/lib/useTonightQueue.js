@@ -54,6 +54,16 @@ function writeQueue(items, startedAt) {
 
 const queue = ref(readQueue().items);
 
+function entryKey(type, id) {
+    return `${type}:${String(id)}`;
+}
+
+function isInQueue(items, type, id) {
+    const key = entryKey(type, id);
+
+    return items.some((entry) => entryKey(entry.type, entry.id) === key);
+}
+
 export function useTonightQueue() {
     function sync() {
         queue.value = readQueue().items;
@@ -64,9 +74,8 @@ export function useTonightQueue() {
         if (!type || !id) return;
 
         let { items, startedAt } = readQueue();
-        const key = `${type}:${id}`;
 
-        if (items.some((entry) => `${entry.type}:${entry.id}` === key)) return;
+        if (isInQueue(items, type, id)) return;
 
         if (items.length === 0) {
             startedAt = Date.now();
@@ -79,7 +88,7 @@ export function useTonightQueue() {
 
     function remove(type, id) {
         let { items, startedAt } = readQueue();
-        items = items.filter((entry) => !(entry.type === type && entry.id === id));
+        items = items.filter((entry) => entryKey(entry.type, entry.id) !== entryKey(type, id));
 
         if (items.length === 0) {
             startedAt = null;
@@ -95,8 +104,23 @@ export function useTonightQueue() {
     }
 
     function has(type, id) {
-        return readQueue().items.some((entry) => entry.type === type && entry.id === id);
+        return isInQueue(queue.value, type, id);
     }
 
-    return { queue, add, remove, clear, has, sync };
+    function toggle(item) {
+        const { type, id, title, poster } = item;
+        if (!type || !id) return false;
+
+        if (has(type, id)) {
+            remove(type, id);
+
+            return false;
+        }
+
+        add({ type, id, title, poster });
+
+        return true;
+    }
+
+    return { queue, add, remove, toggle, clear, has, sync };
 }

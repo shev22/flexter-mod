@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Movie\Models\Movie;
 use App\Shared\Data\MediaCardData;
 use App\Shared\Support\MediaResolver;
+use App\Shared\Support\AdultContent;
 use App\Shared\Support\Watchlist;
 use App\Tv\Models\Tv;
 use App\WatchHistory\Models\WatchHistory;
@@ -40,8 +41,8 @@ class RecommendationService
         $watchedMovieIds = $history->where('media_type', 'movie')->pluck('media_id')->map(fn ($id) => (int) $id)->all();
         $watchedTvIds = $history->where('media_type', 'tv')->pluck('media_id')->map(fn ($id) => (int) $id)->all();
 
-        $movies = Movie::query()
-            ->select(['id', 'title', 'poster_path', 'release_date', 'vote_average', 'genre_ids'])
+        $movies = AdultContent::applyToBuilder(Movie::query())
+            ->select(['id', 'title', 'poster_path', 'release_date', 'vote_average', 'genre_ids', 'adult', 'certification'])
             ->where('category', Categories::POPULAR->value)
             ->whereHas('genres', fn ($q) => $q->whereIn('genres.id', $genreIds))
             ->when($watchedMovieIds !== [], fn ($q) => $q->whereNotIn('id', $watchedMovieIds))
@@ -55,8 +56,8 @@ class RecommendationService
             $remaining = $limit - $items->count();
             $movieIds = $movies->pluck('id')->all();
 
-            $tv = Tv::query()
-                ->select(['id', 'title', 'poster_path', 'release_date', 'vote_average', 'genre_ids'])
+            $tv = AdultContent::applyToBuilder(Tv::query())
+                ->select(['id', 'title', 'poster_path', 'release_date', 'vote_average', 'genre_ids', 'adult', 'certification'])
                 ->where('category', Categories::POPULAR->value)
                 ->whereHas('genres', fn ($q) => $q->whereIn('genres.id', $genreIds))
                 ->when($watchedTvIds !== [], fn ($q) => $q->whereNotIn('id', $watchedTvIds))
@@ -124,8 +125,8 @@ class RecommendationService
      */
     private function shuffledFallback(int $limit): array
     {
-        return Movie::query()
-            ->select(['id', 'title', 'poster_path', 'release_date', 'vote_average', 'genre_ids', 'overview'])
+        return AdultContent::applyToBuilder(Movie::query())
+            ->select(['id', 'title', 'poster_path', 'release_date', 'vote_average', 'genre_ids', 'overview', 'adult', 'certification'])
             ->where('category', Categories::TOP_RATED->value)
             ->orderByRaw('CAST(vote_average AS DECIMAL(4,2)) DESC')
             ->limit($limit)

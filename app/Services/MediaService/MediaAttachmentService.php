@@ -8,6 +8,7 @@ use App\Movie\Repositories\Interfaces\MovieRepositoryInterface;
 use App\Services\MediaService\Interfaces\MediaApiClientInterface;
 use App\Services\MediaService\Interfaces\MediaAttachmentServiceInterface;
 use App\Tv\Repositories\Interfaces\TvRepositoryInterface;
+use App\Shared\Support\Tmdb;
 use GuzzleHttp\Promise\Utils;
 use Illuminate\Support\Facades\Http;
 
@@ -42,6 +43,9 @@ class MediaAttachmentService implements MediaAttachmentServiceInterface
                 }
             }
         }
+
+        $media['adult'] = (bool) ($resourse['adult'] ?? $media['adult'] ?? false);
+        $media['certification'] = Tmdb::usCertification($resourse) ?? $media['certification'] ?? null;
 
         return $media;
     }

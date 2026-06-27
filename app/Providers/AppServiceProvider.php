@@ -14,6 +14,8 @@ use App\Settings\Services\Interfaces\SettingsServiceInterface;
 use App\Settings\Services\SettingsService;
 use App\Site\Services\Interfaces\SiteSettingsServiceInterface;
 use App\Site\Services\SiteSettingsService;
+use App\Billing\Services\BillingService;
+use App\Billing\Services\Interfaces\BillingServiceInterface;
 use App\Comment\Services\CommentService;
 use App\Comment\Services\Interfaces\CommentServiceInterface;
 use App\WatchHistory\Services\Interfaces\WatchHistoryServiceInterface;
@@ -38,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         SiteSettingsServiceInterface::class => SiteSettingsService::class,
         WatchHistoryServiceInterface::class => WatchHistoryService::class,
         CommentServiceInterface::class => CommentService::class,
+        BillingServiceInterface::class => BillingService::class,
     ];
 
     /**

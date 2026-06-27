@@ -28,6 +28,12 @@
                     && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 var isDark = theme === 'dark' || (theme === 'system' && prefersDark);
                 root.classList.toggle('dark', isDark);
+
+                if (!isDark) {
+                    root.setAttribute('data-theme', theme === 'cream' ? 'cream' : 'light');
+                } else {
+                    root.removeAttribute('data-theme');
+                }
             } catch (e) {
                 document.documentElement.classList.add('dark');
             }

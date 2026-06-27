@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { computed, onMounted } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import { FilmIcon, TvIcon, QueueListIcon } from '@heroicons/vue/24/solid';
 import HeroCarousel from '../Components/home/HeroCarousel.vue';
@@ -8,8 +9,9 @@ import MediaCard from '../Components/ui/MediaCard.vue';
 import ListIcon from '../Components/ui/ListIcon.vue';
 import ContinueWatchingCard from '../Components/ui/ContinueWatchingCard.vue';
 import SkeletonCard from '../Components/ui/SkeletonCard.vue';
+import { loadSessionContinueWatching } from '../lib/vidsrc.js';
 
-defineProps({
+const props = defineProps({
     hero: { type: Array, default: () => [] },
     continueWatching: { type: Array, default: () => [] },
     recommendations: { type: Array, default: () => [] },
@@ -19,6 +21,24 @@ defineProps({
     tvRails: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
 });
+
+const page = usePage();
+
+const continueWatchingItems = computed(() => {
+    const server = props.continueWatching ?? [];
+
+    if (page.props.auth?.user) {
+        return server;
+    }
+
+    return loadSessionContinueWatching();
+});
+
+onMounted(() => {
+    if (page.props.auth?.user) {
+        router.reload({ only: ['continueWatching'], preserveScroll: true, preserveState: true });
+    }
+});
 </script>
 
 <template>
@@ -27,9 +47,9 @@ defineProps({
     <HeroCarousel :items="hero" />
 
     <div class="space-y-16 px-4 py-14 lg:px-12">
-        <section v-if="continueWatching.length">
+        <section v-if="continueWatchingItems.length">
             <Rail title="Continue watching" eyebrow="Pick up where you left off">
-                <ContinueWatchingCard v-for="item in continueWatching" :key="`${item.type}-${item.id}`" :item="item" />
+                <ContinueWatchingCard v-for="item in continueWatchingItems" :key="`${item.type}-${item.id}`" :item="item" />
             </Rail>
         </section>
 

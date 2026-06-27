@@ -24,6 +24,8 @@ class SearchResource extends JsonResource
             'release_date' => Tmdb::monthYear($this['release_date'] ?? $this['first_air_date'] ?? null),
             'known_for' => $type === 'person' ? $this->knownForLabel() : null,
             'in_watchlist' => Watchlist::has($watchlistType, $id),
+            'adult' => (bool) ($this['adult'] ?? false),
+            'certification' => Tmdb::usCertification($this->resource instanceof \Illuminate\Contracts\Support\Arrayable ? $this->resource->toArray() : (array) $this->resource),
             'route' => $this->getRoute($type),
         ];
     }

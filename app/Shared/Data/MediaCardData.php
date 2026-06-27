@@ -26,6 +26,8 @@ final class MediaCardData implements Arrayable, JsonSerializable
         public array $genres,
         public bool $inWatchlist = false,
         public ?string $overviewSnippet = null,
+        public bool $adult = false,
+        public ?string $certification = null,
     ) {}
 
     public static function fromModel(Movie|Tv $m, bool $inWatchlist = false): self
@@ -40,6 +42,8 @@ final class MediaCardData implements Arrayable, JsonSerializable
             genres: Tmdb::genreNames($m->genre_ids),
             inWatchlist: $inWatchlist,
             overviewSnippet: self::snippet($m->overview),
+            adult: (bool) ($m->adult ?? false),
+            certification: $m->certification ?? null,
         );
     }
 
@@ -55,6 +59,8 @@ final class MediaCardData implements Arrayable, JsonSerializable
             genres: Tmdb::genreNames($d['genre_ids'] ?? null, $d['genres'] ?? null),
             inWatchlist: $inWatchlist,
             overviewSnippet: self::snippet($d['overview'] ?? null),
+            adult: (bool) ($d['adult'] ?? false),
+            certification: Tmdb::usCertification($d),
         );
     }
 
@@ -70,6 +76,8 @@ final class MediaCardData implements Arrayable, JsonSerializable
             'genres' => $this->genres,
             'in_watchlist' => $this->inWatchlist,
             'overview' => $this->overviewSnippet,
+            'adult' => $this->adult,
+            'certification' => $this->certification,
         ];
     }
 

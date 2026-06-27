@@ -11,6 +11,7 @@ use App\Movie\Services\Interfaces\MovieServiceInterface;
 use App\Shared\Data\MediaDetailData;
 use App\Shared\Data\MediaCardData;
 use App\Shared\Data\MediaFilterData;
+use App\Shared\Support\AdultContent;
 use App\Shared\Support\Present;
 use App\Shared\Support\Watchlist;
 use App\WatchHistory\Services\Interfaces\WatchHistoryServiceInterface;
@@ -43,7 +44,11 @@ class MovieController extends Controller
     {
         $detail = $this->movieService->getMovieWithRelatedMovies($movieId);
 
-        $related = collect($detail['related'] ?? [])
+        if ($detail === [] || ! AdultContent::allowsDetail($detail)) {
+            abort(404);
+        }
+
+        $related = collect(AdultContent::filterTmdb($detail['related'] ?? []))
             ->take(12)
             ->map(fn ($item) => MediaCardData::fromTmdb($item, 'movie', Watchlist::has('movie', (int) ($item['id'] ?? 0)))->toArray())
             ->values()

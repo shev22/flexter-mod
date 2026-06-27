@@ -19,12 +19,19 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Tv extends Model
 {
     protected $table = 'tv';
+
+    protected $casts = [
+        'adult' => 'boolean',
+    ];
+
     protected $fillable =
         [
             'backdrop_path',
             'title',
             'logo',
             'category',
+            'adult',
+            'certification',
             'original_language',
             'overview',
             'popularity',

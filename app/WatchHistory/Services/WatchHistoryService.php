@@ -4,6 +4,7 @@ namespace App\WatchHistory\Services;
 
 use App\Models\User;
 use App\Shared\Data\MediaCardData;
+use App\Shared\Support\AdultContent;
 use App\Shared\Support\MediaResolver;
 use App\Shared\Support\Watchlist;
 use App\WatchHistory\Models\WatchHistory;
@@ -13,8 +14,26 @@ use Illuminate\Support\Collection;
 
 class WatchHistoryService implements WatchHistoryServiceInterface
 {
+    /** Progress at or above this is treated as finished and hidden from continue watching. */
+    private const COMPLETION_THRESHOLD = 95;
+
     public function touch(User $user, string $type, int $mediaId, int $progress = 15, ?int $season = null, ?int $episode = null): int
     {
+        $entry = $this->findEntry($user, $type, $mediaId, $season, $episode);
+
+        if ($entry && $this->isFinished($entry)) {
+            return $this->upsert(
+                $user,
+                $type,
+                $mediaId,
+                max(5, min(100, $progress)),
+                false,
+                $season,
+                $episode,
+                restarting: true,
+            );
+        }
+
         return $this->upsert($user, $type, $mediaId, max(5, min(100, $progress)), false, $season, $episode);
     }
 
@@ -76,11 +95,16 @@ class WatchHistoryService implements WatchHistoryServiceInterface
     public function continueWatching(User $user, int $limit = 12): array
     {
         $entries = $user->watchHistories()
-            ->where('completed', false)
             ->where('progress_percent', '>', 0)
+            ->where('progress_percent', '<', self::COMPLETION_THRESHOLD)
             ->orderByDesc('last_watched_at')
-            ->limit($limit)
             ->get();
+
+        // One card per title — keep the most recently watched season/episode.
+        $entries = $entries
+            ->unique(fn (WatchHistory $entry) => "{$entry->media_type}:{$entry->media_id}")
+            ->take($limit)
+            ->values();
 
         $resolver = MediaResolver::fromHistoryEntries($entries);
 
@@ -88,7 +112,7 @@ class WatchHistoryService implements WatchHistoryServiceInterface
             ->map(function (WatchHistory $entry) use ($resolver) {
                 $media = $resolver->getForEntry($entry);
 
-                if (! $media) {
+                if (! $media || (! AdultContent::allowed() && (bool) $media->adult)) {
                     return null;
                 }
 
@@ -137,23 +161,44 @@ class WatchHistoryService implements WatchHistoryServiceInterface
             ->first();
     }
 
-    private function upsert(User $user, string $type, int $mediaId, int $progress, bool $completed = false, ?int $season = null, ?int $episode = null): int
+    public function progressForEpisode(User $user, string $type, int $mediaId, int $season, int $episode): ?WatchHistory
     {
-        $entry = $user->watchHistories()
+        return $user->watchHistories()
             ->where('media_type', $type)
             ->where('media_id', $mediaId)
-            ->when($season !== null, fn ($q) => $q->where('season_number', $season))
-            ->when($season === null, fn ($q) => $q->whereNull('season_number'))
-            ->when($episode !== null, fn ($q) => $q->where('episode_number', $episode))
-            ->when($episode === null, fn ($q) => $q->whereNull('episode_number'))
+            ->where('season_number', $season)
+            ->where('episode_number', $episode)
             ->first();
+    }
 
-        $nextProgress = $entry
-            ? max((int) $entry->progress_percent, $progress)
-            : $progress;
+    private function upsert(
+        User $user,
+        string $type,
+        int $mediaId,
+        int $progress,
+        bool $completed = false,
+        ?int $season = null,
+        ?int $episode = null,
+        bool $restarting = false,
+    ): int {
+        $entry = $this->findEntry($user, $type, $mediaId, $season, $episode);
 
-        $isComplete = $completed || $nextProgress >= 100;
-        $nextProgress = $isComplete ? 100 : $nextProgress;
+        if ($restarting) {
+            $nextProgress = max(5, min(100, $progress));
+            $isComplete = $completed;
+        } elseif ($entry && $this->isFinished($entry) && $progress < self::COMPLETION_THRESHOLD) {
+            // Rewatch — allow progress to move down from a finished entry.
+            $nextProgress = $progress;
+            $isComplete = false;
+        } else {
+            $nextProgress = $entry
+                ? max((int) $entry->progress_percent, $progress)
+                : $progress;
+
+            $isComplete = $completed || $nextProgress >= self::COMPLETION_THRESHOLD;
+        }
+
+        $nextProgress = $isComplete ? min(100, $nextProgress) : $nextProgress;
 
         WatchHistory::query()->updateOrCreate(
             [
@@ -171,6 +216,23 @@ class WatchHistoryService implements WatchHistoryServiceInterface
         );
 
         return $nextProgress;
+    }
+
+    private function findEntry(User $user, string $type, int $mediaId, ?int $season, ?int $episode): ?WatchHistory
+    {
+        return $user->watchHistories()
+            ->where('media_type', $type)
+            ->where('media_id', $mediaId)
+            ->when($season !== null, fn ($q) => $q->where('season_number', $season))
+            ->when($season === null, fn ($q) => $q->whereNull('season_number'))
+            ->when($episode !== null, fn ($q) => $q->where('episode_number', $episode))
+            ->when($episode === null, fn ($q) => $q->whereNull('episode_number'))
+            ->first();
+    }
+
+    private function isFinished(WatchHistory $entry): bool
+    {
+        return (bool) $entry->completed || (int) $entry->progress_percent >= self::COMPLETION_THRESHOLD;
     }
 
     /** @return array<string, mixed> */

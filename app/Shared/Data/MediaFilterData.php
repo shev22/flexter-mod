@@ -3,6 +3,7 @@
 namespace App\Shared\Data;
 
 use Illuminate\Contracts\Support\Arrayable;
+use App\Shared\Support\AdultContent;
 use App\Site\Services\Interfaces\SiteSettingsServiceInterface;
 use Illuminate\Http\Request;
 use JsonSerializable;
@@ -56,6 +57,7 @@ final class MediaFilterData implements Arrayable, JsonSerializable
             'ratings' => $this->ratings,
             'perPage' => $this->perPage,
             'page' => $this->page,
+            'allow_adult' => AdultContent::allowed(),
         ], JSON_THROW_ON_ERROR));
     }
 

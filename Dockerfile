@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libicu-dev \
-    && docker-php-ext-install pdo_mysql zip exif pcntl gd intl \
+    && docker-php-ext-install pdo_mysql zip exif pcntl gd intl bcmath \
     && docker-php-ext-install mysqli \
     && docker-php-ext-enable mysqli
 
