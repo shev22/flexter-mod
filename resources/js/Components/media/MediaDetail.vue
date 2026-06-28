@@ -25,6 +25,9 @@ import TrailerBackground from './TrailerBackground.vue';
 import TrailerModal from './TrailerModal.vue';
 import MediaPlayer from './MediaPlayer.vue';
 import CommentSection from '../comments/CommentSection.vue';
+import MediaReviewSection from './MediaReviewSection.vue';
+import SubscribePrompt from '../billing/SubscribePrompt.vue';
+import { useBilling } from '../../lib/useBilling.js';
 
 const props = defineProps({
     media: { type: Object, required: true },
@@ -34,13 +37,16 @@ const props = defineProps({
         type: Object,
         default: () => ({ threads: [], total: 0 }),
     },
+    review: { type: Object, default: null },
 });
 
 const page = usePage();
 const { toggle } = useWatchlist();
 const { bump, markWatched } = useWatchHistory();
 const { add: addTonight, has: inTonightQueue } = useTonightQueue();
+const { canPlay } = useBilling();
 const showPlayer = ref(false);
+const showSubscribe = ref(false);
 const showTrailer = ref(false);
 const modalEmbedSrc = ref(null);
 const heroHover = ref(false);
@@ -96,6 +102,12 @@ function historyPayload() {
 }
 
 function openPlayer() {
+    if (!canPlay.value) {
+        showSubscribe.value = true;
+
+        return;
+    }
+
     showPlayer.value = true;
 }
 
@@ -398,6 +410,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
             </section>
 
             <CommentSection :media="media" :comments="comments" />
+            <MediaReviewSection :media="media" :review="review" />
 
             <Rail v-if="media.related?.length" :title="media.type === 'tv' ? 'More like this' : 'You may also like'">
                 <MediaCard v-for="item in media.related" :key="item.id" :item="item" />
@@ -428,5 +441,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
             @close="closeTrailer"
             @progress="onTrailerProgress"
         />
+
+        <SubscribePrompt :open="showSubscribe" @close="showSubscribe = false" />
     </article>
 </template>

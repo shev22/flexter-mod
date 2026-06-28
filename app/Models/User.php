@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Cashier\Billable;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -21,6 +22,7 @@ class User extends Authenticatable implements FilamentUser
 {
     use HasFactory;
     use HasRoles;
+    use Billable;
 
     public function canAccessPanel(Panel $panel): bool
     {
@@ -79,5 +81,15 @@ class User extends Authenticatable implements FilamentUser
     public function watchHistories(): HasMany
     {
         return $this->hasMany(WatchHistory::class);
+    }
+
+    public function flexterLists(): HasMany
+    {
+        return $this->hasMany(\App\List\Models\FlexterList::class);
+    }
+
+    public function accessGrants(): HasMany
+    {
+        return $this->hasMany(\App\Billing\Models\AccessGrant::class);
     }
 }

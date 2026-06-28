@@ -14,8 +14,14 @@ use App\Settings\Services\Interfaces\SettingsServiceInterface;
 use App\Settings\Services\SettingsService;
 use App\Site\Services\Interfaces\SiteSettingsServiceInterface;
 use App\Site\Services\SiteSettingsService;
+use App\Billing\Services\BillingService;
+use App\Billing\Services\Interfaces\BillingServiceInterface;
 use App\Comment\Services\CommentService;
 use App\Comment\Services\Interfaces\CommentServiceInterface;
+use App\Rating\Services\Interfaces\MediaReviewServiceInterface;
+use App\Rating\Services\MediaReviewService;
+use App\TonightQueue\Services\Interfaces\TonightQueueServiceInterface;
+use App\TonightQueue\Services\TonightQueueService;
 use App\WatchHistory\Services\Interfaces\WatchHistoryServiceInterface;
 use App\WatchHistory\Services\WatchHistoryService;
 use App\WatchList\Services\Interfaces\WatchListServiceInterface;
@@ -38,6 +44,9 @@ class AppServiceProvider extends ServiceProvider
         SiteSettingsServiceInterface::class => SiteSettingsService::class,
         WatchHistoryServiceInterface::class => WatchHistoryService::class,
         CommentServiceInterface::class => CommentService::class,
+        TonightQueueServiceInterface::class => TonightQueueService::class,
+        BillingServiceInterface::class => BillingService::class,
+        MediaReviewServiceInterface::class => MediaReviewService::class,
     ];
 
     /**
@@ -57,5 +66,6 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('feedback', fn (Request $request) => Limit::perMinute(3)->by($request->ip()));
         RateLimiter::for('history', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('comments', fn (Request $request) => Limit::perMinute(15)->by($request->user()?->id ?: $request->ip()));
+        RateLimiter::for('reviews', fn (Request $request) => Limit::perMinute(20)->by($request->user()?->id ?: $request->ip()));
     }
 }

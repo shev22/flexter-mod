@@ -6,6 +6,7 @@ use App\Comment\Services\Interfaces\CommentServiceInterface;
 use App\Enums\MediaType;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rating\Services\Interfaces\MediaReviewServiceInterface;
 use App\Shared\Data\MediaCardData;
 use App\Shared\Data\MediaDetailData;
 use App\Shared\Data\MediaFilterData;
@@ -27,6 +28,7 @@ class TvController extends Controller
         private readonly WatchListServiceInterface $watchListService,
         private readonly WatchHistoryServiceInterface $watchHistoryService,
         private readonly CommentServiceInterface $commentService,
+        private readonly MediaReviewServiceInterface $reviewService,
     ) {}
 
     public function __invoke(TvFilterationRequest $request): Response
@@ -51,7 +53,8 @@ class TvController extends Controller
 
         $watchProgress = null;
         $watchContext = null;
-        if ($user = Auth::user()) {
+        $user = Auth::user();
+        if ($user) {
             $entry = $this->watchHistoryService->latestProgressFor($user, 'tv', (int) $tvId);
             $watchProgress = $entry ? (int) $entry->progress_percent : 0;
             $watchContext = $entry ? [
@@ -67,6 +70,9 @@ class TvController extends Controller
             'watchProgress' => $watchProgress,
             'watchContext' => $watchContext,
             'comments' => $this->commentService->forMedia('tv', (int) $tvId, $user),
+            'review' => $user
+                ? $this->reviewService->forMedia($user, 'tv', (int) $tvId)
+                : null,
         ]);
     }
 

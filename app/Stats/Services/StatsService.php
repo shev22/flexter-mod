@@ -111,6 +111,24 @@ class StatsService
             $badges[] = ['key' => 'series', 'label' => 'Series Explorer', 'description' => '5+ series in your history'];
         }
 
+        if ($entries->count() >= 50) {
+            $badges[] = ['key' => 'century', 'label' => 'Century Club', 'description' => '50+ titles tracked'];
+        }
+
+        if ($entries->where('completed', true)->where('media_type', 'movie')->count() >= 25) {
+            $badges[] = ['key' => 'cinephile', 'label' => 'Cinephile', 'description' => '25+ movies completed'];
+        }
+
+        if ($hours >= 100) {
+            $badges[] = ['key' => 'dedicated', 'label' => 'Dedicated Viewer', 'description' => '100+ hours watched'];
+        }
+
+        $completedCount = $entries->where('completed', true)->count();
+
+        if ($completedCount >= 1 && $completedCount < 10) {
+            $badges[] = ['key' => 'first', 'label' => 'First Finish', 'description' => 'Completed your first title'];
+        }
+
         return $badges;
     }
 

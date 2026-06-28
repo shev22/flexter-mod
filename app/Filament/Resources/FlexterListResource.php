@@ -26,6 +26,11 @@ class FlexterListResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->whereNull('user_id');
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([

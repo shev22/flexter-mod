@@ -17,13 +17,25 @@ const searchOpen = ref(false);
 const helpOpen = ref(false);
 const toast = ref(null);
 let toastTimer;
+let sidebarCloseTimer;
 
 const HERO_PAGES = ['Home', 'Movies/Show', 'Tv/Show', 'Actors/Show'];
 const hero = computed(() => HERO_PAGES.includes(page.component));
 
-const showMaintenance = computed(
-    () => page.props.site?.maintenance && !page.props.auth?.user?.is_admin,
-);
+const isLight = computed(() => {
+    const theme = page.props.settings?.theme ?? 'dark';
+
+    if (theme === 'light') {
+        return true;
+    }
+
+    if (theme === 'dark') {
+        return false;
+    }
+
+    return typeof window !== 'undefined'
+        && window.matchMedia?.('(prefers-color-scheme: light)').matches;
+});
 
 useKeyboardShortcuts(helpOpen);
 
@@ -45,6 +57,24 @@ watch(
     { deep: true },
 );
 
+function openSidebar() {
+    clearTimeout(sidebarCloseTimer);
+    sidebarOpen.value = true;
+}
+
+function scheduleCloseSidebar() {
+    clearTimeout(sidebarCloseTimer);
+    sidebarCloseTimer = setTimeout(() => {
+        sidebarOpen.value = false;
+    }, 280);
+}
+
+function onLeftEdgeEnter() {
+    if (window.matchMedia('(min-width: 1024px)').matches) {
+        openSidebar();
+    }
+}
+
 function onKey(e) {
     const tag = (e.target?.tagName || '').toLowerCase();
     const editing = tag === 'input' || tag === 'textarea' || e.target?.isContentEditable;
@@ -54,34 +84,46 @@ function onKey(e) {
     }
 }
 onMounted(() => window.addEventListener('keydown', onKey));
-onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
+onBeforeUnmount(() => {
+    window.removeEventListener('keydown', onKey);
+    clearTimeout(sidebarCloseTimer);
+});
 </script>
 
 <template>
     <div class="min-h-screen bg-bg text-ink">
         <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-            <div class="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
-            <div class="absolute -right-40 top-1/3 h-96 w-96 rounded-full bg-accent2/10 blur-3xl" />
+            <div
+                class="absolute -left-40 -top-40 h-96 w-96 rounded-full blur-3xl"
+                :class="isLight ? 'bg-amber-200/30' : 'bg-accent/10'"
+            />
+            <div
+                class="absolute -right-40 top-1/3 h-96 w-96 rounded-full blur-3xl"
+                :class="isLight ? 'bg-orange-100/40' : 'bg-accent2/10'"
+            />
         </div>
 
         <div
-            v-if="showMaintenance"
-            class="fixed inset-x-0 top-0 z-[60] border-b border-amber-500/30 bg-amber-500/15 px-4 py-2.5 text-center text-sm font-medium text-amber-200 backdrop-blur-md"
-        >
-            {{ page.props.site?.name || 'Flexter' }} is in maintenance mode. Some features may be unavailable.
-        </div>
+            class="fixed inset-y-0 left-0 z-[45] hidden w-3 lg:block"
+            aria-hidden="true"
+            @mouseenter="onLeftEdgeEnter"
+        />
 
-        <Sidebar :open="sidebarOpen" @close="sidebarOpen = false" />
+        <Sidebar
+            :open="sidebarOpen"
+            @close="sidebarOpen = false"
+            @mouseenter="openSidebar"
+            @mouseleave="scheduleCloseSidebar"
+        />
 
         <div>
             <Navbar
                 :hero="hero"
                 :sidebar-open="sidebarOpen"
-                :maintenance-offset="showMaintenance"
                 @toggle-sidebar="sidebarOpen = !sidebarOpen"
                 @open-search="searchOpen = true"
             />
-            <main :class="[hero ? '' : 'pt-16', showMaintenance ? 'mt-10' : '', 'pb-20 lg:pb-0']">
+            <main :class="[hero ? '' : 'pt-16', 'pb-20 lg:pb-0']">
                 <div :key="page.url">
                     <slot />
                 </div>

@@ -14,7 +14,7 @@ function persistAppearance(settings) {
         localStorage.setItem(
             STORAGE_KEY,
             JSON.stringify({
-                theme: settings?.theme ?? 'dark',
+                theme: settings?.theme ?? 'light',
                 accent: settings?.accent ?? 'aurora',
                 density: settings?.density ?? 'comfortable',
                 high_contrast: !!settings?.high_contrast,
@@ -28,7 +28,7 @@ function persistAppearance(settings) {
 
 export function applyAppearance(settings) {
     const root = document.documentElement;
-    const theme = settings?.theme ?? 'dark';
+    const theme = settings?.theme ?? 'light';
     const accent = settings?.accent ?? 'aurora';
     const density = settings?.density ?? 'comfortable';
 

@@ -145,6 +145,7 @@ class SiteSettingsPage extends Page implements HasForms
                         Toggle::make('enable_recommendations')->label('Personalized recommendations'),
                         Toggle::make('enable_actor_feed')->label('Actor follow feed'),
                         Toggle::make('enable_public_lists')->label('Public curated lists'),
+                        Toggle::make('enable_payments')->label('Require subscription for playback'),
                         Toggle::make('site_wide_autoplay')->label('Autoplay trailers site-wide default'),
                         Toggle::make('maintenance_mode')->label('Maintenance mode'),
                         TextInput::make('tmdb_daily_request_limit')

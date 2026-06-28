@@ -13,6 +13,8 @@ class FlexterList extends Model
         'slug',
         'description',
         'icon',
+        'user_id',
+        'visibility',
         'genre_ids',
         'media_type',
         'item_limit',
@@ -31,6 +33,11 @@ class FlexterList extends Model
             'min_year' => 'integer',
             'is_featured' => 'boolean',
         ];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 
     public function items(): HasMany

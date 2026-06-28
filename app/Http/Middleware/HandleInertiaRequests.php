@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Billing\Services\Interfaces\BillingServiceInterface;
 use App\Genre\Models\Genre;
 use App\Shared\Data\SettingsData;
 use App\Site\Services\Interfaces\SiteSettingsServiceInterface;
@@ -57,6 +58,7 @@ class HandleInertiaRequests extends Middleware
                         'recommendations' => $settings->enableRecommendations,
                         'actor_feed' => $settings->enableActorFeed,
                         'public_lists' => $settings->enablePublicLists,
+                        'payments' => $settings->enablePayments,
                         'site_wide_autoplay' => $settings->siteWideAutoplay,
                     ],
                     'playback' => [
@@ -68,6 +70,7 @@ class HandleInertiaRequests extends Middleware
                     ],
                 ];
             },
+            'billing' => fn () => app(BillingServiceInterface::class)->sharedState($request->user()),
         ]);
     }
 }

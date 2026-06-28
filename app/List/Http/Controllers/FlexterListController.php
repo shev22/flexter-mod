@@ -20,7 +20,7 @@ class FlexterListController extends Controller
 
     public function show(string $slug): Response
     {
-        $list = $this->lists->show($slug);
+        $list = $this->lists->show($slug, auth()->user());
 
         abort_if($list === null, 404);
 

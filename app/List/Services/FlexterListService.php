@@ -4,6 +4,7 @@ namespace App\List\Services;
 
 use App\List\Models\FlexterList;
 use App\List\Support\ListIcons;
+use App\Models\User;
 use App\Movie\Models\Movie;
 use App\Shared\Data\MediaCardData;
 use App\Shared\Support\AppCache;
@@ -20,6 +21,7 @@ class FlexterListService
         $lists = AppCache::lists(
             "featured.{$limit}",
             fn () => FlexterList::query()
+                ->whereNull('user_id')
                 ->where('is_featured', true)
                 ->withCount('items')
                 ->orderBy('sort_order')
@@ -41,6 +43,7 @@ class FlexterListService
         $lists = AppCache::lists(
             'index',
             fn () => FlexterList::query()
+                ->whereNull('user_id')
                 ->withCount('items')
                 ->orderBy('sort_order')
                 ->get(),
@@ -61,7 +64,7 @@ class FlexterListService
     /**
      * @return array<string, mixed>|null
      */
-    public function show(string $slug): ?array
+    public function show(string $slug, ?User $viewer = null): ?array
     {
         $list = AppCache::lists(
             "show.{$slug}",
@@ -72,9 +75,24 @@ class FlexterListService
                 ->first(),
         );
 
-        return $list instanceof FlexterList
-            ? $this->presentList($list, $list->items, (int) $list->items_count)
-            : null;
+        if (! $list instanceof FlexterList) {
+            return null;
+        }
+
+        if ($list->user_id !== null) {
+            $isOwner = $viewer !== null && $list->user_id === $viewer->id;
+
+            if (! $isOwner && $list->visibility !== 'public') {
+                return null;
+            }
+        }
+
+        $presented = $this->presentList($list, $list->items, (int) $list->items_count);
+        $presented['is_owner'] = $viewer !== null && $list->user_id === $viewer->id;
+        $presented['visibility'] = $list->visibility ?? 'private';
+        $presented['is_mine'] = $list->user_id !== null;
+
+        return $presented;
     }
 
     /**

@@ -13,13 +13,14 @@ import {
     XMarkIcon,
     QueueListIcon,
     ChartBarIcon,
+    BookOpenIcon,
     QuestionMarkCircleIcon,
 } from '@heroicons/vue/24/outline';
 
 defineProps({
     open: { type: Boolean, default: false },
 });
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'mouseenter', 'mouseleave']);
 
 const page = usePage();
 const isAdmin = () => page.props.auth?.user?.is_admin === true;
@@ -34,6 +35,7 @@ const nav = [
 const library = [
     { label: 'Watchlist', icon: BookmarkIcon, route: 'watchlist', match: ['watchlist'] },
     { label: 'Lists', icon: QueueListIcon, route: 'lists', match: ['lists', 'lists.show'] },
+    { label: 'Diary', icon: BookOpenIcon, route: 'diary', match: ['diary'], auth: true },
     { label: 'Stats', icon: ChartBarIcon, route: 'stats', match: ['stats'], auth: true },
     { label: 'Settings', icon: Cog6ToothIcon, route: 'settings', match: ['settings'] },
 ];
@@ -62,6 +64,8 @@ function isActive(item) {
         <aside
             class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-hair/10 bg-surface/85 px-4 py-6 backdrop-blur-2xl transition-transform duration-300"
             :class="open ? 'translate-x-0' : '-translate-x-full'"
+            @mouseenter="$emit('mouseenter')"
+            @mouseleave="$emit('mouseleave')"
         >
             <div class="mb-8 flex items-center justify-between px-2">
                 <Link :href="route('home')" class="flex items-center gap-2" @click="emit('close')">

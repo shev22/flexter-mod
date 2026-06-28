@@ -1,6 +1,9 @@
 <?php
 
 use App\Actor\Http\Controllers\ActorsController;
+use App\Billing\Http\Controllers\BillingController;
+use App\Billing\Http\Controllers\PayPalWebhookController;
+use App\Billing\Http\Controllers\StripeWebhookController;
 use App\Comment\Http\Controllers\CommentController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Feedback\FeedbackController;
@@ -8,8 +11,10 @@ use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Search\SearchController;
 use App\List\Http\Controllers\FlexterListController;
 use App\Movie\Http\Controllers\MovieController;
+use App\Rating\Http\Controllers\MediaReviewController;
 use App\Settings\Http\Controllers\SettingsController;
 use App\Stats\Http\Controllers\StatsController;
+use App\TonightQueue\Http\Controllers\TonightQueueController;
 use App\Tv\Http\Controllers\TvController;
 use App\WatchHistory\Http\Controllers\WatchHistoryController;
 use App\WatchList\Http\Controllers\WatchListBulkController;
@@ -45,6 +50,9 @@ Route::inertia('help', 'Main/Help')->name('help');
 Route::get('lists', [FlexterListController::class, 'index'])->name('lists');
 Route::get('lists/{slug}', [FlexterListController::class, 'show'])->name('lists.show');
 
+Route::post('stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
+Route::post('paypal/webhook', PayPalWebhookController::class);
+
 /*
 | Guest authentication
 */
@@ -73,8 +81,24 @@ Route::middleware('auth')->group(function () {
     Route::get('settings', SettingsController::class)->name('settings');
     Route::get('settings/history', [SettingsController::class, 'history'])->name('settings.history');
     Route::get('stats', StatsController::class)->name('stats');
+    Route::get('diary', [MediaReviewController::class, 'diary'])->name('diary');
     Route::patch('settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::patch('settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
+
+    Route::prefix('tonight')->group(function () {
+        Route::get('/', [TonightQueueController::class, 'index'])->name('tonight.index');
+        Route::post('/toggle', [TonightQueueController::class, 'toggle'])->name('tonight.toggle');
+        Route::delete('/item', [TonightQueueController::class, 'destroy'])->name('tonight.destroy');
+        Route::delete('/', [TonightQueueController::class, 'clear'])->name('tonight.clear');
+        Route::post('/pick', [TonightQueueController::class, 'pick'])->name('tonight.pick');
+    });
+
+    Route::get('subscribe', [BillingController::class, 'subscribe'])->name('billing.subscribe');
+    Route::post('subscribe/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
+    Route::post('subscribe/redeem', [BillingController::class, 'redeem'])->name('billing.redeem');
+    Route::get('subscribe/success', [BillingController::class, 'success'])->name('billing.success');
+    Route::get('subscribe/paypal/success', [BillingController::class, 'paypalSuccess'])->name('billing.paypal.success');
+    Route::get('billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
 
     Route::middleware('throttle:history')->group(function () {
         Route::post('history/touch', [WatchHistoryController::class, 'touch'])->name('history.touch');
@@ -90,5 +114,10 @@ Route::middleware('auth')->group(function () {
         Route::patch('comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
         Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
         Route::post('comments/{comment}/like', [CommentController::class, 'like'])->name('comments.like');
+    });
+
+    Route::middleware('throttle:reviews')->group(function () {
+        Route::post('reviews', [MediaReviewController::class, 'store'])->name('reviews.store');
+        Route::delete('reviews/{review}', [MediaReviewController::class, 'destroy'])->name('reviews.destroy');
     });
 });

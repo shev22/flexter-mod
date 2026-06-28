@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Movie\Http\Request\MoviesFilterRequest;
 use App\Movie\Services\Interfaces\MovieServiceInterface;
+use App\Rating\Services\Interfaces\MediaReviewServiceInterface;
 use App\Shared\Data\MediaDetailData;
 use App\Shared\Data\MediaCardData;
 use App\Shared\Data\MediaFilterData;
@@ -27,6 +28,7 @@ class MovieController extends Controller
         private readonly WatchListServiceInterface $watchListService,
         private readonly WatchHistoryServiceInterface $watchHistoryService,
         private readonly CommentServiceInterface $commentService,
+        private readonly MediaReviewServiceInterface $reviewService,
     ) {}
 
     public function __invoke(MoviesFilterRequest $request): Response
@@ -50,7 +52,8 @@ class MovieController extends Controller
             ->all();
 
         $watchProgress = null;
-        if ($user = Auth::user()) {
+        $user = Auth::user();
+        if ($user) {
             $entry = $this->watchHistoryService->progressFor($user, 'movie', (int) $movieId);
             $watchProgress = $entry ? (int) $entry->progress_percent : 0;
         }
@@ -61,6 +64,9 @@ class MovieController extends Controller
             'media' => $media->toArray(),
             'watchProgress' => $watchProgress,
             'comments' => $this->commentService->forMedia('movie', (int) $movieId, $user),
+            'review' => $user
+                ? $this->reviewService->forMedia($user, 'movie', (int) $movieId)
+                : null,
         ]);
     }
 

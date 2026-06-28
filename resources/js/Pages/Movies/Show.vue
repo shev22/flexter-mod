@@ -8,6 +8,7 @@ defineProps({
         type: Object,
         default: () => ({ threads: [], total: 0 }),
     },
+    review: { type: Object, default: null },
 });
 </script>
 
@@ -17,5 +18,6 @@ defineProps({
         :media="media"
         :watch-progress="watchProgress"
         :comments="comments"
+        :review="review"
     />
 </template>

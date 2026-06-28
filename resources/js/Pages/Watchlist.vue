@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { BookmarkIcon, MoonIcon, TrashIcon } from '@heroicons/vue/24/solid';
+import { BookmarkIcon, MoonIcon, SparklesIcon, TrashIcon } from '@heroicons/vue/24/solid';
 import MediaCard from '../Components/ui/MediaCard.vue';
 import PersonCard from '../Components/ui/PersonCard.vue';
 import AppButton from '../Components/ui/AppButton.vue';
@@ -20,8 +20,21 @@ const props = defineProps({
     suggestions: { type: Array, default: () => [] },
 });
 
-const { queue, remove: removeTonight, clear: clearTonight, sync } = useTonightQueue();
+const { queue, remove: removeTonight, clear: clearTonight, sync, pickRandom } = useTonightQueue();
 sync();
+
+const picking = ref(false);
+const lastPick = ref(null);
+
+async function pickTonight() {
+    picking.value = true;
+    try {
+        const result = await pickRandom('watchlist');
+        lastPick.value = result.picked ?? null;
+    } finally {
+        picking.value = false;
+    }
+}
 
 const sortOptions = [
     { value: 'added', label: 'Recently added' },
@@ -153,10 +166,19 @@ function bulkRemove() {
                         <p class="text-xs text-muted">{{ queue.length }} picked for tonight</p>
                     </div>
                 </div>
-                <button type="button" class="text-xs font-semibold text-muted transition hover:text-rose-400" @click="clearTonight">
-                    Clear all
-                </button>
+                <div class="flex items-center gap-3">
+                    <AppButton type="button" variant="glass" :disabled="picking" @click="pickTonight">
+                        <SparklesIcon class="h-4 w-4" />
+                        {{ picking ? 'Picking…' : 'Pick for me' }}
+                    </AppButton>
+                    <button type="button" class="text-xs font-semibold text-muted transition hover:text-rose-400" @click="clearTonight">
+                        Clear all
+                    </button>
+                </div>
             </div>
+            <p v-if="lastPick" class="mb-3 text-sm text-accent2">
+                Tonight's pick: <strong>{{ lastPick.title }}</strong>
+            </p>
             <div class="no-scrollbar flex gap-3 overflow-x-auto pb-1">
                 <div
                     v-for="item in queue"

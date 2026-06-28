@@ -9,7 +9,7 @@
             try {
                 var stored = JSON.parse(localStorage.getItem('flexter.appearance') || '{}');
                 var root = document.documentElement;
-                var theme = stored.theme || 'dark';
+                var theme = stored.theme || 'light';
                 var accent = stored.accent || 'aurora';
                 var density = stored.density || 'comfortable';
 

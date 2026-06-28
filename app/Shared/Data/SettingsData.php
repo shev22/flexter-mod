@@ -28,7 +28,7 @@ final class SettingsData implements Arrayable, JsonSerializable
     public static function defaults(): self
     {
         return new self(
-            theme: 'dark',
+            theme: 'light',
             accent: 'aurora',
             autoplayTrailers: true,
             reduceMotion: false,

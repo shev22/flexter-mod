@@ -18,6 +18,7 @@ import MultiSelectMenu from '../Components/ui/MultiSelectMenu.vue';
 import AppButton from '../Components/ui/AppButton.vue';
 import WatchHistoryList from '../Components/settings/WatchHistoryList.vue';
 import { applyAppearance } from '../lib/appearance.js';
+import { useBilling } from '../lib/useBilling.js';
 
 const props = defineProps({
     settings: { type: Object, required: true },
@@ -32,6 +33,7 @@ const historyLoading = ref(false);
 const historyLoaded = ref(false);
 
 const authUser = usePage().props.auth?.user ?? {};
+const { paymentsEnabled, isSubscribed, formattedPrice, subscriptionLabel, accessEndsAt, provider } = useBilling();
 const genreOptions = computed(() =>
     (usePage().props.genres ?? []).map((g) => ({ value: g.id, label: g.name })),
 );
@@ -71,7 +73,7 @@ const prefs = useForm({
 
 const themes = [
     { value: 'dark', label: 'Dark', hint: 'Cinematic default' },
-    { value: 'light', label: 'Light', hint: 'Bright & clean' },
+    { value: 'light', label: 'Light', hint: 'Warm cream palette' },
     { value: 'system', label: 'System', hint: 'Follow OS' },
 ];
 
@@ -405,6 +407,26 @@ function saveProfile() {
                     </div>
 
                     <AppButton class="mt-8" :disabled="profile.processing" @click="saveProfile">Update profile</AppButton>
+
+                    <div v-if="paymentsEnabled" class="mt-10 rounded-2xl border border-hair/10 bg-surface2/30 p-5">
+                        <h3 class="font-display text-lg font-bold text-ink">Flexter Premium</h3>
+                        <p class="mt-2 text-sm text-muted">
+                            <template v-if="isSubscribed">
+                                Your {{ subscriptionLabel || 'premium access' }} is active. Stream unlimited movies and series.
+                                <span v-if="accessEndsAt" class="block mt-1 text-xs">Access ends {{ new Date(accessEndsAt).toLocaleDateString() }}.</span>
+                            </template>
+                            <template v-else>View plans and subscribe to unlock streaming playback.</template>
+                        </p>
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            <AppButton v-if="!isSubscribed" :href="route('billing.subscribe')">View plans</AppButton>
+                            <AppButton v-else-if="provider === 'stripe'" :href="route('billing.portal')" variant="ghost">Manage billing</AppButton>
+                        </div>
+                    </div>
+                    <div v-else class="mt-10 rounded-2xl border border-hair/10 bg-surface2/30 p-5">
+                        <h3 class="font-display text-lg font-bold text-ink">Flexter Premium</h3>
+                        <p class="mt-2 text-sm text-muted">Premium streaming is not enabled on this site yet.</p>
+                        <AppButton class="mt-4" :href="route('billing.subscribe')" variant="ghost">Preview plans</AppButton>
+                    </div>
                 </section>
 
                 <!-- Privacy -->
